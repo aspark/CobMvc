@@ -5,12 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <PackageReference Include="Consul" Version="0.7.2.6" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Config\" />
-    <Folder Include="Cache\" />
+    <ProjectReference Include="..\Cobweb.Core\Cobweb.Core.csproj" />
   </ItemGroup>
 
 </Project>
