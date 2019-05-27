@@ -9,8 +9,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Cobweb;
 
-namespace Corbweb.Demo
+namespace Cobweb.Demo
 {
     public class Startup
     {
@@ -25,11 +26,15 @@ namespace Corbweb.Demo
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
+            services.AddCobweb();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            app.UseCobweb("Cobweb.Demo");
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

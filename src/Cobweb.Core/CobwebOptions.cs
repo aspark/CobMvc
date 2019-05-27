@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Cobweb.Core.Service
+namespace Cobweb.Core
 {
-    public interface IServiceClient
+    public class CobwebOptions
     {
-
     }
 }
