@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Cobweb.Client
+namespace Cobweb.Core
 {
-    public class CobClientStrategyAttribute : Attribute
+    public class CobStrategyAttribute : Attribute
     {
         public Type ExceptionType { get; set; }
 

@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cobweb.Client\Cobweb.Client.csproj" />
     <ProjectReference Include="..\Cobweb.Core\Cobweb.Core.csproj" />
   </ItemGroup>
 

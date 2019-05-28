@@ -3,14 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Cobweb.Client
+namespace Cobweb.Core.Client
 {
     public interface ICobServiceSelector
     {
         ServiceInfo GetOne();
 
-        void SetResponseTime(ServiceInfo service, TimeSpan time);
+        void SetServiceResponseTime(ServiceInfo service, TimeSpan time);
 
-        void IncreaseFailedCount(ServiceInfo service);
+        void SetServiceFailed(ServiceInfo service);
     }
 }

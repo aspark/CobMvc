@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 namespace Cobweb.ClientDemo
 {
-    [CobClient]
     public interface IDemo
     {
         Task<UserInfo> GetUserInfo(string name);

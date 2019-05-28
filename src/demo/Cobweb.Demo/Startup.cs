@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Cobweb;
+using Cobweb.Consul;
 
 namespace Cobweb.Demo
 {
@@ -25,22 +26,32 @@ namespace Cobweb.Demo
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc()
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                .AddCobweb(cob=> {
+                    cob.ConfigureOptions(opt=> {
+                        opt.ServiceName = "CobwebDemo";
+                        opt.ServiceAddress = "http://localhost:54469";
+                        opt.HealthCheck = "/api/values";
+                    });
+                    cob.UseConsul(opt=> {
+                        opt.Address = new Uri("http://localhost:8500");
+                    });
+                });
 
-            services.AddCobweb();
+            //services.AddCobweb();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            app.UseCobweb("Cobweb.Demo");
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
             app.UseMvc();
+            app.UseCobweb();
         }
     }
 }

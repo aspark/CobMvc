@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Cobweb.Client
+namespace Cobweb.Core
 {
-    public class CobClientCacheAttribute : Attribute
+    public class CobCacheAttribute : Attribute
     {
         public bool Enable { get; set; }
     }

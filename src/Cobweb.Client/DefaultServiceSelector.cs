@@ -1,4 +1,5 @@
-﻿using Cobweb.Core.Service;
+﻿using Cobweb.Core.Client;
+using Cobweb.Core.Service;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,13 +14,13 @@ namespace Cobweb.Client
     public class DefaultServiceSelector : ICobServiceSelector
     {
         ConcurrentDictionary<string, ServiceInfoStatus> _services = new ConcurrentDictionary<string, ServiceInfoStatus>();
-        IServiceRegistration _serviceDiscovery;
+        IServiceRegistration _serviceRegistration;
         string _serviceName;
 
 
         public DefaultServiceSelector(IServiceRegistration serviceDiscovery, string serviceName)
         {
-            _serviceDiscovery = serviceDiscovery;
+            _serviceRegistration = serviceDiscovery;
             _serviceName = serviceName;
         }
 
@@ -37,7 +38,7 @@ namespace Cobweb.Client
         //todo:定时刷新
         private async Task Refresh()
         {
-            var services = await _serviceDiscovery.GetByName(_serviceName);
+            var services = await _serviceRegistration.GetByName(_serviceName);
             foreach (var svc in services)
             {
                 _services.GetOrAdd(svc.ID, id => new ServiceInfoStatus(svc)).Service = svc;
@@ -76,15 +77,17 @@ namespace Cobweb.Client
             return target;
         }
 
-        public void IncreaseFailedCount(ServiceInfo service)
+        public void SetServiceFailed(ServiceInfo service)
         {
             if (_services.TryGetValue(service.ID, out ServiceInfoStatus status))
             {
                 status.FailedCount++;
+
+                //_serviceRegistration.SetStatus(service.ID, Core.Service.ServiceInfoStatus.Warning);
             }
         }
 
-        public void SetResponseTime(ServiceInfo service, TimeSpan time)
+        public void SetServiceResponseTime(ServiceInfo service, TimeSpan time)
         {
             if (_services.TryGetValue(service.ID, out ServiceInfoStatus status))
             {

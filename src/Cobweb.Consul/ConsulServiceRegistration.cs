@@ -1,19 +1,17 @@
 ﻿using Cobweb.Core.Service;
 using Consul;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Cobweb.Consul
 {
-    internal class ConsulServiceDiscovery : IServiceRegistration
+    internal class ConsulServiceRegistration : IServiceRegistration
     {
         ConsulClient _client = null;
 
-        public ConsulServiceDiscovery(Action<ConsulClientConfiguration> config)
+        public ConsulServiceRegistration(Action<ConsulClientConfiguration> config)
         {
             _client = new ConsulClient(config);
         }
@@ -29,7 +27,7 @@ namespace Cobweb.Consul
                 {
                     items.Add(new ServiceInfo
                     {
-                        Host = svc.Address,
+                        Address = svc.Address,
                         ID = svc.ID,
                         Name = svc.Service,
                         Port = svc.Port,
@@ -69,7 +67,7 @@ namespace Cobweb.Consul
                     {
                         items.Add(new ServiceInfo
                         {
-                            Host = svc.Address,
+                            Address = svc.Address,
                             ID = svc.ServiceID,
                             Name = svc.ServiceName,
                             Port = svc.ServicePort,
@@ -88,7 +86,7 @@ namespace Cobweb.Consul
             {
                 var registration = new AgentServiceRegistration
                 {
-                    Address = entry.Host,
+                    Address = entry.Address,
                     ID = entry.ID,
                     Name = entry.Name,
                     Port = entry.Port
@@ -102,7 +100,8 @@ namespace Cobweb.Consul
                         {
                             Interval = i.Interval,
                             Timeout = i.Timeout,
-                            Status = HealthStatus.Passing
+                            Status = HealthStatus.Passing,
+                            DeregisterCriticalServiceAfter = TimeSpan.FromHours(1)
                         };
 
                         switch (i.Type)
@@ -136,6 +135,11 @@ namespace Cobweb.Consul
             var result = await _client.Agent.ServiceDeregister(id);
 
             return result.StatusCode == System.Net.HttpStatusCode.OK;
+        }
+
+        public Task<bool> SetStatus(string id, ServiceInfoStatus status)
+        {
+            return Task.FromResult(true);
         }
     }
 }

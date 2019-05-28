@@ -6,5 +6,12 @@ namespace Cobweb.Core
 {
     public class CobwebOptions
     {
+        public string ServiceName { get; set; }
+
+        public string ServiceAddress { get; set; }
+
+        //public int Port { get; set; }
+
+        public string HealthCheck { get; set; }
     }
 }

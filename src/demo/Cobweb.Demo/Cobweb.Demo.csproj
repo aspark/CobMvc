@@ -14,6 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Cobweb.Consul\Cobweb.Consul.csproj" />
+    <ProjectReference Include="..\..\Cobweb.Protobuf\Cobweb.Protobuf.csproj" />
+    <ProjectReference Include="..\..\Cobweb.WebSocket\Cobweb.WebSocket.csproj" />
     <ProjectReference Include="..\..\Cobweb\Cobweb.csproj" />
   </ItemGroup>
 

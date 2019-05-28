@@ -9,9 +9,9 @@ namespace Cobweb.Core.Service
         /// <summary>
         /// 注册服务
         /// </summary>
-        /// <param name="entry"></param>
+        /// <param name="service"></param>
         /// <returns></returns>
-        Task<bool> Register(ServiceInfo entry);
+        Task<bool> Register(ServiceInfo service);
 
         /// <summary>
         /// 移除
@@ -32,5 +32,13 @@ namespace Cobweb.Core.Service
         /// <param name="name"></param>
         /// <returns></returns>
         Task<List<ServiceInfo>> GetByName(string name);
+
+        /// <summary>
+        /// 设置状态
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        Task<bool> SetStatus(string id, ServiceInfoStatus status);
     }
 }

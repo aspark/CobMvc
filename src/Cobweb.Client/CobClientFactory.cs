@@ -1,4 +1,6 @@
 ﻿using Castle.DynamicProxy;
+using Cobweb.Core;
+using Cobweb.Core.Client;
 using Cobweb.Core.Service;
 using System;
 using System.Collections.Concurrent;
@@ -11,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Cobweb.Client
 {
-    public class CobClientFactory
+    public class CobClientFactory : ICobClientFactory
     {
         ICobRequest _request = null;
         IServiceRegistration _serviceDiscovery = null;
@@ -29,11 +31,9 @@ namespace Cobweb.Client
             return obj;
         }
 
-        public T Invoke<T>(string serviceName, Dictionary<string, object> parameters, params object[] states)//指定post
+        public ICobClient GetProxy(string serviceName, Dictionary<string, object> parameters, params object[] states)//指定post
         {
-            var client = new CobCommonClient(_request, _serviceDiscovery, serviceName);
-
-            return (T)(client.DoRequest<T>(serviceName, parameters, states).Result);
+            return new CommonCobClient(_request, _serviceDiscovery, serviceName);
         }
 
     }
@@ -57,9 +57,10 @@ namespace Cobweb.Client
             var target = _selector.GetOne();
             if (target != null)
             {
-                var url = target.Host + invocation.Method.Name;
+                var url = target.Address + invocation.Method.Name;
 
-                var ctx = new CobRequestContext() { Url = target.Host, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
+                var ctx = new CobRequestContext() { Url = target.Address, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
+                //todo:重试
                 using (var wrap = new ServiceInfoExecution(_selector))
                 {
                     wrap.Wrap(target, () =>
@@ -72,27 +73,6 @@ namespace Cobweb.Client
                     });
                 }
                 var sw = new Stopwatch();
-
-                //todo:重试
-                try
-                {
-
-                    sw.Restart();
-                    var ret = _request.DoRequest(ctx, null).Result;
-                    sw.Stop();
-
-                    invocation.ReturnValue = ret;
-
-                }
-                catch {
-                    //todo:熔断
-                    _selector.IncreaseFailedCount(target);
-                }
-                finally
-                {
-                    //todo:设置时间 or 异常
-                    _selector.SetResponseTime(target, sw.Elapsed);
-                }
             }
 
             //todo:无服务可用，降级？
@@ -131,12 +111,12 @@ namespace Cobweb.Client
             catch
             {
                 //todo:熔断
-                _selector.IncreaseFailedCount(target);
+                _selector.SetServiceFailed(target);
             }
             finally
             {
                 //todo:设置时间 or 异常
-                _selector.SetResponseTime(target, sw.Elapsed);
+                _selector.SetServiceResponseTime(target, sw.Elapsed);
             }
 
             return default(T);
@@ -148,23 +128,23 @@ namespace Cobweb.Client
         }
     }
 
-    internal class CobCommonClient
+    internal class CommonCobClient: ICobClient
     {
         ICobRequest _request = null;
         ICobServiceSelector _selector = null;
 
-        public CobCommonClient(ICobRequest request, IServiceRegistration serviceDiscovery, string serviceName)
+        public CommonCobClient(ICobRequest request, IServiceRegistration serviceDiscovery, string serviceName)
         {
             _request = request;
             _selector = new DefaultServiceSelector(serviceDiscovery, serviceName);
         }
 
-        public Task<object> DoRequest<T>(string name, Dictionary<string, object> parameters, params object[] states)
+        public Task<T> Invoke<T>(string name, Dictionary<string, object> parameters, params object[] states)
         {
             var target = _selector.GetOne();
             if (target != null)
             {
-                var url = target.Host + name;
+                var url = target.Address + name;
 
                 var ctx = new CobRequestContext { Parameters = parameters, ReturnType = typeof(T), Url = name };
 
@@ -172,14 +152,14 @@ namespace Cobweb.Client
                 {
                     return wrap.Wrap(target, () =>
                     {
-                        var ret = _request.DoRequest(ctx, states);
+                        var ret = _request.DoRequest(ctx, states).ContinueWith(t => (T)t.Result);
 
                         return ret;
                     });
                 }
             }
 
-            return Task.FromResult<object>(default(T));
+            return Task.FromResult(default(T));
         }
     }
 
