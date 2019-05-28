@@ -16,7 +16,7 @@ namespace Cobweb
             //添加TraceID等信息
             if(!context.Request.Headers.ContainsKey(headerTraceID))
             {
-                var traceID = GetOrAddItem(context, headerTraceID, ()=> Guid.NewGuid());
+                var traceID = GetOrAddItem(context, headerTraceID, ()=> Guid.NewGuid().ToString());
 
                 context.Request.Headers.Add(headerTraceID, traceID);
             }
