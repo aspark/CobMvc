@@ -2,7 +2,6 @@
 using Cobweb.Core;
 using Cobweb.Core.Client;
 using Cobweb.Core.Service;
-using Cobweb.InMemory;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -22,11 +21,13 @@ namespace Cobweb
         /// </summary>
         public static IMvcBuilder AddCobweb(this IMvcBuilder mvcBuilder, Action<ICobweb> setup)
         {
-            var container = new CobwebContainer(mvcBuilder.Services);
+            var container = new SimpleCobweb(mvcBuilder.Services);
 
             setup?.Invoke(container);
 
             container.ApplyConfigure();
+
+            ServicesExtensions.RegisterDefaultServices(mvcBuilder.Services);
 
             return mvcBuilder;
         }
@@ -51,9 +52,11 @@ namespace Cobweb
         /// </summary>
         /// <param name="mvcBuilder"></param>
         /// <returns></returns>
-        public static IApplicationBuilder UseCobweb(this IApplicationBuilder mvcBuilder)//, Action<CobwebOptions> option
+        public static IApplicationBuilder UseCobweb(this IApplicationBuilder mvcBuilder, Action<CobwebOptions> optionOverride = null)//
         {
             var options = mvcBuilder.ApplicationServices.GetService<IOptions<CobwebOptions>>().Value;
+
+            optionOverride?.Invoke(options);
 
             if (string.IsNullOrWhiteSpace(options.ServiceAddress))
             {

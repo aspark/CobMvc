@@ -67,7 +67,7 @@ namespace Cobweb.Consul
                     {
                         items.Add(new ServiceInfo
                         {
-                            Address = svc.Address,
+                            Address = svc.ServiceAddress,
                             ID = svc.ServiceID,
                             Name = svc.ServiceName,
                             Port = svc.ServicePort,

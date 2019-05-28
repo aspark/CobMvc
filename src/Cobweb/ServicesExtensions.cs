@@ -1,8 +1,8 @@
 ﻿using Cobweb.Client;
 using Cobweb.Core;
 using Cobweb.Core.Client;
+using Cobweb.Core.InMemory;
 using Cobweb.Core.Service;
-using Cobweb.InMemory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
@@ -17,10 +17,10 @@ namespace Cobweb
         public static void RegisterDefaultServices(IServiceCollection services)
         {
             services.AddTransient<CobwebMiddleware>();
+
             services.TryAddSingleton<IServiceRegistration, InMemoryServiceRegistration>();
-            services.TryAddSingleton<ICobClientFactory, CobClientFactory>();
-            services.TryAddSingleton<ICobRequest, HttpClientCobRequest>();
-            services.TryAddSingleton<ICobServiceSelector, DefaultServiceSelector>();
+
+            services.ConfigureClient();
         }
 
     }

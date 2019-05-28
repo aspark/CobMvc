@@ -32,7 +32,7 @@ namespace Cobweb.Demo
                     cob.ConfigureOptions(opt=> {
                         opt.ServiceName = "CobwebDemo";
                         opt.ServiceAddress = "http://localhost:54469";
-                        opt.HealthCheck = "/api/values";
+                        opt.HealthCheck = "/api/test/GetNames";
                     });
                     cob.UseConsul(opt=> {
                         opt.Address = new Uri("http://localhost:8500");

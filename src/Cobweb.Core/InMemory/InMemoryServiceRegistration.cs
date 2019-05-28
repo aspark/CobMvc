@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Cobweb.InMemory
+namespace Cobweb.Core.InMemory
 {
-    internal class InMemoryServiceRegistration : IServiceRegistration
+    public class InMemoryServiceRegistration : IServiceRegistration
     {
         ConcurrentDictionary<string, ServiceInfo> _services = new ConcurrentDictionary<string, ServiceInfo>();
 

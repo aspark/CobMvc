@@ -1,5 +1,9 @@
 ﻿using Cobweb.Client;
+using Cobweb.Core.Client;
+using Cobweb.Demo.Contract;
+using Microsoft.Extensions.DependencyInjection;
 using System;
+using Cobweb.Consul;
 
 namespace Cobweb.ClientDemo
 {
@@ -8,11 +12,27 @@ namespace Cobweb.ClientDemo
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
+
+            StartMain();
+
+            Console.ReadKey();
         }
 
         static void StartMain()
         {
-            var user = new CobClientFactory(null).CreateProxy<IDemo>().GetUserInfo("jackie");
+            var services = new ServiceCollection();
+
+            services.AddCobweb(cob => {
+                cob.UseConsul(opt => {
+                    opt.Address = new Uri("http://localhost:8500");
+                });
+            });
+
+            var provider = services.BuildServiceProvider();
+
+            var strs = provider.GetService<ICobClientFactory>().GetProxy<IDemo>(new CobClientOptions { ServiceName = "CobwebDemo" }).GetNames();
+
+            Console.WriteLine("返回:{0}", string.Join(", ", strs));
         }
     }
 }

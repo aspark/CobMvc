@@ -7,6 +7,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Cobweb.Client\Cobweb.Client.csproj" />
+    <ProjectReference Include="..\..\Cobweb.Consul\Cobweb.Consul.csproj" />
+    <ProjectReference Include="..\Cobweb.Demo.Contract\Cobweb.Demo.Contract.csproj" />
   </ItemGroup>
 
 </Project>

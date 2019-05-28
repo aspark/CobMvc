@@ -71,8 +71,9 @@ namespace Cobweb.Client
 
                         return (object)null;
                     });
+
+                    return;
                 }
-                var sw = new Stopwatch();
             }
 
             //todo:无服务可用，降级？
@@ -124,7 +125,7 @@ namespace Cobweb.Client
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            
         }
     }
 

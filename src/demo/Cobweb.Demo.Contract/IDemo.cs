@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Cobweb.ClientDemo
+namespace Cobweb.Demo.Contract
 {
     public interface IDemo
     {
+        string[] GetNames();
+
         Task<UserInfo> GetUserInfo(string name);
     }
 
