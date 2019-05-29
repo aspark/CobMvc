@@ -17,6 +17,8 @@ namespace Cobweb.Core
 
         public Dictionary<string, object> Parameters { get; set; }
 
+        //public object Body { get; set; }
+
         public Type ReturnType { get; set; }
 
         /// <summary>

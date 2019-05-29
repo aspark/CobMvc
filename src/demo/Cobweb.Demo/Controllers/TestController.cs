@@ -27,9 +27,13 @@ namespace Cobweb.Demo.Controllers
 
         // POST api/values
         [HttpPost]
-        public void Save([FromBody] string value)
+        public void Save(string value)
         {
         }
 
+        public Task<UserInfo> SaveUserInfo(UserInfo user)
+        {
+            return Task.FromResult(user);
+        }
     }
 }

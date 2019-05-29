@@ -24,42 +24,73 @@ namespace Cobweb.Client
             _serviceDiscovery = serviceDiscovery;
         }
 
-        public T GetProxy<T>(CobClientOptions options) where T : class
+        private ConcurrentDictionary<Type, CobServiceDescription> _serviceDesc = new ConcurrentDictionary<Type, CobServiceDescription>();
+
+        public T GetProxy<T>() where T : class//CobClientOptions options
         {
-            var obj = new ProxyGenerator().CreateInterfaceProxyWithoutTarget<T>(new CobClientIInterceptor(_request, options, _serviceDiscovery));
+            var desc = _serviceDesc.GetOrAdd(typeof(T), t => {
+                var attrs = typeof(T).GetCustomAttributes(typeof(CobServiceAttribute), true);
+                if (!attrs.Any())
+                {
+                    throw new InvalidOperationException($"missing CobServiceAttribute for {typeof(T).Name}");
+                }
+
+                var attr = attrs.First() as CobServiceAttribute;
+
+                return new CobServiceDescription() {
+                    ServiceName = attr.ServiceName,
+                    Path = attr.Path
+                };
+            });
+
+            var obj = new ProxyGenerator().CreateInterfaceProxyWithoutTarget<T>(new CobClientIInterceptor(_request, desc, _serviceDiscovery));
 
             return obj;
         }
 
-        public ICobClient GetProxy(string serviceName, Dictionary<string, object> parameters, params object[] states)//指定post
+        public ICobClient GetProxy(CobServiceDescription desc)//指定post
         {
-            return new CommonCobClient(_request, _serviceDiscovery, serviceName);
+            return new CommonCobClient(_request, _serviceDiscovery, desc);
         }
 
     }
 
     internal class CobClientIInterceptor : IInterceptor
     {
-        CobClientOptions _options = null;
+        CobServiceDescription _descGlobal = null;
         ICobRequest _request = null;
         ICobServiceSelector _selector = null;
 
-        public CobClientIInterceptor(ICobRequest request, CobClientOptions options, IServiceRegistration serviceDiscovery)
+        public CobClientIInterceptor(ICobRequest request, CobServiceDescription desc, IServiceRegistration serviceDiscovery)
         {
-            _options = options;
+            _descGlobal = desc;
             _request = request;
-            _selector = new DefaultServiceSelector(serviceDiscovery, options.ServiceName);
+            _selector = new DefaultServiceSelector(serviceDiscovery, _descGlobal.ServiceName);
         }
 
+        //private ConcurrentDictionary<Type, CobServiceDescription> _serviceDesc = new ConcurrentDictionary<Type, CobServiceDescription>();
         public void Intercept(IInvocation invocation)
         {
             var parameters = new Dictionary<string, object>();
             var target = _selector.GetOne();
             if (target != null)
             {
-                var url = target.Address + invocation.Method.Name;
+                var url = "";
 
-                var ctx = new CobRequestContext() { Url = target.Address, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
+                var attr = invocation.Method.GetCustomAttributes(typeof(CobServiceAttribute), true).FirstOrDefault() as CobServiceAttribute;//todo:优化
+                if (attr != null)
+                    url = target.Address + "/" + attr.Path;
+                else
+                    url = target.Address + "/" + _descGlobal.Path + "/" + invocation.Method.Name;
+
+                //设置调用参数
+                var names = invocation.Method.GetParameters().Select(p => p.Name).ToArray();
+                for (var i = 0; i < invocation.Arguments.Length; i++)
+                {
+                    parameters[names[i]] = invocation.Arguments[i];
+                }
+
+                var ctx = new CobRequestContext() { Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
                 //todo:重试
                 using (var wrap = new ServiceInfoExecution(_selector))
                 {
@@ -109,7 +140,7 @@ namespace Cobweb.Client
             {
                 return action();
             }
-            catch
+            catch(Exception ex)
             {
                 //todo:熔断
                 _selector.SetServiceFailed(target);
@@ -131,23 +162,25 @@ namespace Cobweb.Client
 
     internal class CommonCobClient: ICobClient
     {
+        CobServiceDescription _desc = null;
         ICobRequest _request = null;
         ICobServiceSelector _selector = null;
 
-        public CommonCobClient(ICobRequest request, IServiceRegistration serviceDiscovery, string serviceName)
+        public CommonCobClient(ICobRequest request, IServiceRegistration serviceDiscovery, CobServiceDescription desc)
         {
+            _desc = desc;
             _request = request;
-            _selector = new DefaultServiceSelector(serviceDiscovery, serviceName);
+            _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName);
         }
 
-        public Task<T> Invoke<T>(string name, Dictionary<string, object> parameters, params object[] states)
+        public Task<T> Invoke<T>(string action, Dictionary<string, object> parameters, params object[] states)
         {
             var target = _selector.GetOne();
             if (target != null)
             {
-                var url = target.Address + name;
+                var url = target.Address + "/" + _desc.Path + "/" + action;//todo:format url
 
-                var ctx = new CobRequestContext { Parameters = parameters, ReturnType = typeof(T), Url = name };
+                var ctx = new CobRequestContext { Parameters = parameters, ReturnType = typeof(T), Url = url };
 
                 using (var wrap = new ServiceInfoExecution(_selector))
                 {

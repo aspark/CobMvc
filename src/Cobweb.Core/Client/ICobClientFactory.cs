@@ -6,8 +6,8 @@ namespace Cobweb.Core.Client
 {
     public interface ICobClientFactory
     {
-        T GetProxy<T>(CobClientOptions options) where T : class;
+        T GetProxy<T>() where T : class;
 
-        ICobClient GetProxy(string serviceName, Dictionary<string, object> parameters, params object[] states);
+        ICobClient GetProxy(CobServiceDescription desc);
     }
 }

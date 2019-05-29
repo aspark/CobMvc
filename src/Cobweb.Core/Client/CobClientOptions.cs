@@ -6,8 +6,6 @@ namespace Cobweb.Core.Client
 {
     public class CobClientOptions
     {
-        public string ServiceName { get; set; }
-
-        public string Root { get; set; }
+        
     }
 }
