@@ -26,11 +26,14 @@ namespace Cobweb.Client
             _descriptorGenerator = descriptorGenerator;
         }
 
+        private ConcurrentDictionary<Type, CobClientIInterceptor> _interceptor = new ConcurrentDictionary<Type, CobClientIInterceptor>();
         public T GetProxy<T>() where T : class//CobClientOptions options
         {
-            var desc = new CobServiceDescriptorGenerator().Create<T>();//todo;DI
+            var obj = new ProxyGenerator().CreateInterfaceProxyWithoutTarget<T>(_interceptor.GetOrAdd(typeof(T), type=> {
+                var desc = _descriptorGenerator.Create(type);
 
-            var obj = new ProxyGenerator().CreateInterfaceProxyWithoutTarget<T>(new CobClientIInterceptor(_request, desc, _serviceDiscovery, _descriptorGenerator));
+                return new CobClientIInterceptor(_request, desc, _serviceDiscovery);
+            }));
 
             return obj;
         }
@@ -44,17 +47,15 @@ namespace Cobweb.Client
 
     internal class CobClientIInterceptor : IInterceptor
     {
-        CobServiceDescriptor _descGlobal = null;
+        CobServiceDescriptor _desc = null;
         ICobRequest _request = null;
         ICobServiceSelector _selector = null;
-        ICobServiceDescriptorGenerator _descriptorGenerator = null;
 
-        public CobClientIInterceptor(ICobRequest request, CobServiceDescriptor desc, IServiceRegistration serviceDiscovery, ICobServiceDescriptorGenerator descriptorGenerator)
+        public CobClientIInterceptor(ICobRequest request, CobServiceDescriptor desc, IServiceRegistration serviceDiscovery)
         {
-            _descGlobal = desc;
+            _desc = desc;
             _request = request;
-            _descriptorGenerator = descriptorGenerator;
-            _selector = new DefaultServiceSelector(serviceDiscovery, _descGlobal.ServiceName);
+            _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName);
         }
 
         public void Intercept(IInvocation invocation)
@@ -63,7 +64,7 @@ namespace Cobweb.Client
             var target = _selector.GetOne();
             if (target != null)
             {
-                var url = _descriptorGenerator.Create(invocation.TargetType).GetUrl(target, invocation.Method);
+                var url = _desc.GetUrl(target, invocation.Method);
 
                 //设置调用参数
                 var names = invocation.Method.GetParameters().Select(p => p.Name).ToArray();

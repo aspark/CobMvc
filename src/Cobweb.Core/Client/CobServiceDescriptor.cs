@@ -33,7 +33,7 @@ namespace Cobweb.Core.Client
 
         protected string GetUrl(params string[] paths)
         {
-            return string.Join("/", paths.Select(p => p.TrimStart('/')));
+            return string.Join("/", paths.Select(p => p.Trim('/')));
         }
 
         public virtual CobServiceDescriptor Clone()

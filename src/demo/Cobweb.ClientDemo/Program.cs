@@ -11,11 +11,9 @@ namespace Cobweb.ClientDemo
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Console.WriteLine("press Esc to exit!");
 
             StartMain();
-
-            Console.ReadKey();
         }
 
         static void StartMain()
@@ -30,9 +28,13 @@ namespace Cobweb.ClientDemo
 
             var provider = services.BuildServiceProvider();
 
-            var strs = provider.GetService<ICobClientFactory>().GetProxy<IDemo>().GetNames();
+            do
+            {
+                var strs = provider.GetService<ICobClientFactory>().GetProxy<IDemo>().GetNames();
 
-            Console.WriteLine("返回:{0}", string.Join(", ", strs));
+                Console.WriteLine("返回:{0}", string.Join(", ", strs));
+            }
+            while (Console.ReadKey().Key != ConsoleKey.Escape);
         }
     }
 }

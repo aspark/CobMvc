@@ -79,7 +79,7 @@ namespace Cobweb
                 svcInfo.CheckInfoes = new[] {
                     new ServiceCheckInfo{
                         Type = ServiceCheckInfoType.Http,
-                        Target = new Uri(options.ServiceAddress + "/" + options.HealthCheck.TrimStart('/')),
+                        Target = new Uri(options.ServiceAddress.TrimEnd('/') + "/" + options.HealthCheck.TrimStart('/')),
                         Interval = TimeSpan.FromSeconds(3),
                         Timeout = TimeSpan.FromSeconds(60)
                     }

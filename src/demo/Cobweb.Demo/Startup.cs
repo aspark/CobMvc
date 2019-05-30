@@ -32,7 +32,7 @@ namespace Cobweb.Demo
                     cob.ConfigureOptions(opt=> {
                         opt.ServiceName = "CobwebDemo";
                         //opt.ServiceAddress = "http://localhost:54469";//改为console随机端口
-                        opt.HealthCheck = "/api/test/GetNames";
+                        opt.HealthCheck = "/api/test/Health";
                     });
                     cob.UseConsul(opt=> {
                         opt.Address = new Uri("http://localhost:8500");

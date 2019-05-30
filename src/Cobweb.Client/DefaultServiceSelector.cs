@@ -39,9 +39,17 @@ namespace Cobweb.Client
         private async Task Refresh()
         {
             var services = await _serviceRegistration.GetByName(_serviceName);
+            var exists = new HashSet<string>();
             foreach (var svc in services)
             {
                 _services.GetOrAdd(svc.ID, id => new ServiceInfoStatus(svc)).Service = svc;
+                exists.Add(svc.ID);
+            }
+
+            var saved = _services.Keys;
+            foreach(var del in saved.Where(s=>!exists.Contains(s)))
+            {
+                _services.TryRemove(del, out _);
             }
 
             Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(t => Refresh().Wait());
@@ -57,11 +65,12 @@ namespace Cobweb.Client
 
             ServiceInfo target = null;
 
+            Interlocked.CompareExchange(ref _currentServiceIndex, -1, int.MaxValue);
             //round robin
             for (var i = 0; i < services.Length; i++)
             {
                 Interlocked.Increment(ref _currentServiceIndex);
-                var index = (_currentServiceIndex + i) % services.Length;
+                var index = (_currentServiceIndex) % services.Length;
                 if (services[index].Service.Status == Core.Service.ServiceInfoStatus.Healthy)
                 {
                     services[index].RequestCount++;
