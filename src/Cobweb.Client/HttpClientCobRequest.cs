@@ -11,27 +11,53 @@ using System.Threading.Tasks;
 
 namespace Cobweb.Client
 {
-
     public class HttpClientCobRequest : ICobRequest
     {
         HttpClient _client = null;
-        public HttpClientCobRequest()
+        ICobwebContextFactory _contextFactory = null;
+        public HttpClientCobRequest(ICobwebContextFactory contextFactory)
         {
+            _contextFactory = contextFactory;
             _client = new HttpClient();
         }
 
-        //todo:支持HttpMethod
-        public Task<object> DoRequest(CobRequestContext context, object[] states)
+        //支持HttpMethod, 
+        //todo:HttpPost FromBodyAttribute需要添加mvc core 引用？
+        public Task<object> DoRequest(CobRequestContext context, object state)
         {
-            return Invoke(context);
+            if (context is TypedCobRequestContext)
+                return Invoke(context as TypedCobRequestContext);
+
+            if(state != null && !(state is HttpClientCobRequestOptions))
+            {
+                throw new ArgumentException("state should be HttpClientCobRequestOptions");
+            }
+
+            return Invoke(context, state as HttpClientCobRequestOptions);
         }
 
-        public async Task<object> Invoke(CobRequestContext context)
+        private Task<object> Invoke(CobRequestContext context, HttpClientCobRequestOptions options)
+        {
+            options = options ?? new HttpClientCobRequestOptions();
+
+            return Invoke(context, options.Method);
+        }
+
+        private Task<object> Invoke(TypedCobRequestContext context)
         {
             var usePost = context.Method.GetParameters().Any(p => p.ParameterType.IsClass && p.ParameterType != typeof(string));
 
+            return Invoke(context, usePost ? HttpMethod.Post : HttpMethod.Get);
+        }
+
+        private async Task<object> Invoke(CobRequestContext context, HttpMethod method)
+        {
+            method = method ?? HttpMethod.Get;
+
+            var passViaBody = (method == HttpMethod.Post || method == HttpMethod.Put) ;
+
             var url = context.Url;
-            if(!usePost)
+            if (!passViaBody)
             {
                 if (context.Parameters != null && context.Parameters.Any())
                 {
@@ -45,20 +71,33 @@ namespace Cobweb.Client
                 }
             }
 
-            var msg = new HttpRequestMessage(usePost ? HttpMethod.Post : HttpMethod.Get, url);
+            var msg = new HttpRequestMessage(method, url);
 
-            if(usePost)
+            if (passViaBody)
             {
                 msg.Content = new StringContent(JsonConvert.SerializeObject(context.Parameters), Encoding.UTF8, "application/json");
             }
 
-            //todo:添加traceid等
-            //msg.Headers.Add()
+            //添加traceid等
+            msg.Headers.UserAgent.Clear();
+            msg.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("cobweb", "0.0.1"));
+            msg.Headers.Add(CobwebDefaults.HeaderTraceID, _contextFactory.Current.TraceID.ToString());
+
             var response = await _client.SendAsync(msg);
 
             response.EnsureSuccessStatusCode();//抛出异常
 
             return JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync(), context.ReturnType);
         }
+    }
+
+    public class HttpClientCobRequestOptions
+    {
+        public HttpClientCobRequestOptions()
+        {
+            Method = HttpMethod.Get;
+        }
+
+        public HttpMethod Method { get; set; }
     }
 }

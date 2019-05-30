@@ -1,14 +1,16 @@
 ﻿using Cobweb.Core;
+using Cobweb.Core.Client;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Cobweb.Core
 {
-    public class SimpleCobweb : ICobweb
+    public class DefaultCobweb : ICobweb
     {
-        public SimpleCobweb(IServiceCollection services)
+        public DefaultCobweb(IServiceCollection services)
         {
             _services = services;
         }
@@ -24,6 +26,8 @@ namespace Cobweb.Core
         public void ApplyConfigure()
         {
             _services.AddSingleton<ICobweb>(this);
+            _services.TryAddSingleton<ICobServiceDescriptorGenerator, CobServiceDescriptorGenerator>();
+            _services.TryAddSingleton<ICobwebContextFactory, CobwebContextFactory>();
             _services.AddOptions<CobwebOptions>();
 
             _configServices.ForEach(config => config(_services));

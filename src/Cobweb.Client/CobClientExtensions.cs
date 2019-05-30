@@ -16,7 +16,7 @@ namespace Cobweb.Client
         {
             services.ConfigureClient();
 
-            var container = new SimpleCobweb(services);
+            var container = new DefaultCobweb(services);
 
             setup?.Invoke(container);
 

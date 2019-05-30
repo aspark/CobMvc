@@ -8,7 +8,7 @@ namespace Cobweb.Core
 {
     public interface ICobRequest
     {
-        Task<object> DoRequest(CobRequestContext context, object[] states);
+        Task<object> DoRequest(CobRequestContext context, object state);
     }
 
     public class CobRequestContext
@@ -20,11 +20,16 @@ namespace Cobweb.Core
         //public object Body { get; set; }
 
         public Type ReturnType { get; set; }
+    }
 
+    /// <summary>
+    /// 使用接口生成的调用上下文
+    /// </summary>
+    public class TypedCobRequestContext : CobRequestContext
+    {
         /// <summary>
-        /// 仅使用接口时有效
+        /// 
         /// </summary>
         public MethodInfo Method { get; set; }
     }
-
 }

@@ -17,9 +17,14 @@ namespace Cobweb.Core
             ServiceName = serviceName;
         }
 
+        /// <summary>
+        /// 服务名
+        /// </summary>
         public string ServiceName { get; set; }
 
+        /// <summary>
+        /// 调用路径
+        /// </summary>
         public string Path { get; set; }
     }
-
 }

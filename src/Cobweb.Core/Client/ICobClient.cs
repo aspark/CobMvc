@@ -7,7 +7,7 @@ namespace Cobweb.Core.Client
 {
     public interface ICobClient
     {
-        Task<T> Invoke<T>(string name, Dictionary<string, object> parameters, params object[] states);
+        Task<T> Invoke<T>(string name, Dictionary<string, object> parameters, object state);
     }
 
 }

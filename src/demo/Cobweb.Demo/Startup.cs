@@ -31,7 +31,7 @@ namespace Cobweb.Demo
                 .AddCobweb(cob=> {
                     cob.ConfigureOptions(opt=> {
                         opt.ServiceName = "CobwebDemo";
-                        opt.ServiceAddress = "http://localhost:54469";
+                        //opt.ServiceAddress = "http://localhost:54469";//改为console随机端口
                         opt.HealthCheck = "/api/test/GetNames";
                     });
                     cob.UseConsul(opt=> {

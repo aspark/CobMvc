@@ -101,7 +101,11 @@ namespace Cobweb.Consul
                             Interval = i.Interval,
                             Timeout = i.Timeout,
                             Status = HealthStatus.Passing,
+#if DEBUG
+                            DeregisterCriticalServiceAfter = TimeSpan.FromSeconds(10)
+#else
                             DeregisterCriticalServiceAfter = TimeSpan.FromHours(1)
+#endif
                         };
 
                         switch (i.Type)

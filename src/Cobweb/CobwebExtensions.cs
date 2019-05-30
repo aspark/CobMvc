@@ -21,7 +21,7 @@ namespace Cobweb
         /// </summary>
         public static IMvcBuilder AddCobweb(this IMvcBuilder mvcBuilder, Action<ICobweb> setup)
         {
-            var container = new SimpleCobweb(mvcBuilder.Services);
+            var container = new DefaultCobweb(mvcBuilder.Services);
 
             setup?.Invoke(container);
 
