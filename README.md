@@ -1,8 +1,8 @@
 # Cobweb
 
-原本打算采用[Orleans](https://github.com/dotnet/orleans)分布式框架的做为业务开发的基础的，但其Consul支持方式太过简单粗暴，也没有实现Consul主动的健康检查机制，首先自己尝试重写了Consul实现，并加入Service注册和健康检查机制，但奈何Orleans的TableMembership太过复杂，一直无法达到理想效果，最终只有放弃。后来将目光转移到[Surging](https://github.com/dotnetcore/surging)微服务框架，这是一非常优秀的框架，只是自己不太喜欢侵入性太高的方式，所以Cobweb诞生了。
+原本打算采用[Orleans](https://github.com/dotnet/orleans)分布式框架的作为业务开发的基础的，但其Consul支持方式太过简单粗暴，也没有实现Consul主动的健康检查机制，首先自己尝试重写了Consul实现，并加入Service注册和健康检查机制，但奈何Orleans的TableMembership太过复杂，一直无法达到理想效果，最终只能放弃。后来将目光转移到[Surging](https://github.com/dotnetcore/surging)微服务框架，这是一个非常优秀的框架，只是自己不太喜欢侵入性太高的方式，所以Cobweb诞生了。
 
-CobWeb基于asp..net core mvc开发，定位为一款简单、低侵入性的微服务框架。至于名称的由来是因为联想到微服务调用想蜘蛛网一样，然后[iciba](http://www.iciba.com/)给出了这个单词～
+CobWeb基于asp..net core mvc开发，定位为一款简单、低侵入性的微服务框架。至于名称的由来是因为联想到微服务调用链想蜘蛛网一样，然后[iciba](http://www.iciba.com/)给出了这个单词～
 
 > **注意：当前框架还处理快速迭代中，部分功能不稳定**
 
@@ -28,7 +28,7 @@ services.AddMvc()
 ```
 
 #### MVC调用其它服务
-将`ICobClientFactory`由构造函数注入后一直调用即可
+将`ICobClientFactory`由构造函数注入后直接调用即可
 ```C#
 public TestController(ICobClientFactory clientFactory)
 {
@@ -42,7 +42,7 @@ public TestController(ICobClientFactory clientFactory)
 ```
 
 #### Console客户端调用
-console需要自行构造`ServiceCollection`来启用`DI`，然后像mvc中一样`AddCobweb()`并行进想关配置即可。
+console需要自行构造`ServiceCollection`来启用`DI`，然后像mvc中一样`AddCobweb()`并进行相关配置即可。
 
 ```C#
 var services = new ServiceCollection();
@@ -66,7 +66,7 @@ Console.WriteLine("返回:{0}", string.Join(", ", strs));
 
 #### 服务接口申明
 
-为方便各系统调，可使用接口申明服务提供的api明细。该操作非必须，但在同上解决方案/业务还是建议使用。
+为方便各系统调，可使用接口申明服务提供的api明细。该操作非必须，但在同一解决方案/业务内还是建议使用。
 ```C#
     [CobService("CobwebDemo", Path ="/api/test/")]
     //todo:重试、超时、负载等策略
