@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Cobweb.Core\Cobweb.Core.csproj" />
+    <ProjectReference Include="..\..\src\Cobweb.Core\Cobweb.Core.csproj" />
   </ItemGroup>
 
 </Project>
