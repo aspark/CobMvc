@@ -13,6 +13,8 @@ namespace Cobweb.Demo.Contract
         [CobService(Path = "/api/test/GetNames")]
         string[] GetNames();
 
+        string[] GetOtherNames();
+
         Task<UserInfo> GetUserInfo(string name);
 
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Cobweb.Core.Client;
 using Cobweb.Demo.Contract;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,6 +12,13 @@ namespace Cobweb.Demo.Controllers
     [ApiController]
     public class TestController : ControllerBase, IDemo
     {
+        ICobClientFactory _clientFactory;
+
+        public TestController(ICobClientFactory clientFactory)
+        {
+            _clientFactory = clientFactory;
+        }
+
         [HttpGet]
         public string Health()
         {
@@ -26,6 +34,18 @@ namespace Cobweb.Demo.Controllers
             Console.WriteLine($"{time}\tinvoke GetNames");
 
             return new string[] { time, time };
+        }
+
+        [HttpGet]
+        public string[] GetOtherNames()
+        {
+            var time = DateTime.Now.ToString("HH:mm:ss.ffff");
+
+            Console.WriteLine($"{time}\tinvoke GetOtherNames");
+
+            var names = _clientFactory.GetProxy<IDemo>().GetNames();
+
+            return names;
         }
 
         // GET api/values/5

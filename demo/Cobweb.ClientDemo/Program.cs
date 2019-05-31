@@ -32,6 +32,8 @@ namespace Cobweb.ClientDemo
             {
                 var strs = provider.GetService<ICobClientFactory>().GetProxy<IDemo>().GetNames();
 
+                //var strs = provider.GetService<ICobClientFactory>().GetProxy(new CobServiceDescriptor { ServiceName = "CobwebDemo" }).Invoke<string[]>("GetNames", null, null);
+
                 Console.WriteLine("返回:{0}", string.Join(", ", strs));
             }
             while (Console.ReadKey().Key != ConsoleKey.Escape);
