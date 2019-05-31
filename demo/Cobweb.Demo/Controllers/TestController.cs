@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Cobweb.Core.Client;
 using Cobweb.Demo.Contract;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace Cobweb.Demo.Controllers
 {
@@ -54,7 +55,7 @@ namespace Cobweb.Demo.Controllers
         {
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");
 
-            Console.WriteLine($"{time}\tinvoke GetUserInfo");
+            Console.WriteLine($"{time}\tinvoke GetUserInfo:{name}");
             return Task.FromResult(new UserInfo { Name = name, ID = 1, Addr = time });
         }
 
@@ -63,7 +64,7 @@ namespace Cobweb.Demo.Controllers
         {
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");
 
-            Console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss.ffff")}\tinvoke SaveUserInfo");
+            Console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss.ffff")}\tinvoke SaveUserInfo:{JsonConvert.SerializeObject(user)}");
 
             user.Addr = time;
 
