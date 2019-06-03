@@ -50,8 +50,8 @@ namespace Cobweb.Demo
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseMvc();
             app.UseCobweb();
+            app.UseMvc();
         }
     }
 }

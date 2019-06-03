@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Cobweb.Core;
 using Cobweb.Core.Client;
 using Cobweb.Demo.Contract;
 using Microsoft.AspNetCore.Mvc;
@@ -15,8 +16,11 @@ namespace Cobweb.Demo.Controllers
     {
         ICobClientFactory _clientFactory;
 
-        public TestController(ICobClientFactory clientFactory)
+        ICobwebContextFactory _cobwebContextFactory;
+
+        public TestController(ICobClientFactory clientFactory, ICobwebContextFactory cobwebContextFactory)
         {
+            _cobwebContextFactory = cobwebContextFactory;
             _clientFactory = clientFactory;
         }
 
@@ -32,7 +36,7 @@ namespace Cobweb.Demo.Controllers
         {
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");
 
-            Console.WriteLine($"{time}\tinvoke GetNames");
+            Console.WriteLine($"{time}\t{_cobwebContextFactory.Current.TraceID}\tinvoke GetNames");
 
             return new string[] { time, time };
         }
@@ -42,7 +46,7 @@ namespace Cobweb.Demo.Controllers
         {
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");
 
-            Console.WriteLine($"{time}\tinvoke GetOtherNames");
+            Console.WriteLine($"{time}\t{_cobwebContextFactory.Current.TraceID}\tinvoke GetOtherNames");
 
             var names = _clientFactory.GetProxy<IDemo>().GetNames();
 
@@ -55,7 +59,7 @@ namespace Cobweb.Demo.Controllers
         {
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");
 
-            Console.WriteLine($"{time}\tinvoke GetUserInfo:{name}");
+            Console.WriteLine($"{time}\t{_cobwebContextFactory.Current.TraceID}\tinvoke GetUserInfo:{name}");
             return Task.FromResult(new UserInfo { Name = name, ID = 1, Addr = time });
         }
 
@@ -64,7 +68,7 @@ namespace Cobweb.Demo.Controllers
         {
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");
 
-            Console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss.ffff")}\tinvoke SaveUserInfo:{JsonConvert.SerializeObject(user)}");
+            Console.WriteLine($"{time}\t{_cobwebContextFactory.Current.TraceID}\tinvoke SaveUserInfo:{JsonConvert.SerializeObject(user)}");
 
             user.Addr = time;
 

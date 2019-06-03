@@ -1,5 +1,6 @@
 ﻿using Cobweb.Core;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,24 +11,33 @@ namespace Cobweb
     internal class CobwebMiddleware : IMiddleware
     {
         ICobwebContextFactory _contextFactory = null;
-        public CobwebMiddleware(ICobwebContextFactory contextFactory)
+        ILogger<CobwebMiddleware> _logger = null;
+
+        public CobwebMiddleware(ICobwebContextFactory contextFactory, ILogger<CobwebMiddleware> logger)
         {
+            _logger = logger;
             _contextFactory = contextFactory;
         }
 
         public Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
             //添加TraceID等信息
-            if(!context.Request.Headers.ContainsKey(CobwebDefaults.HeaderTraceID))
+            Guid traceID;
+            if (!context.Request.Headers.ContainsKey(CobwebDefaults.HeaderTraceID))
             {
-                var traceID = _contextFactory.Current.TraceID;// GetOrAddItem(context, CobwebDefaults.HeaderTraceID, ()=> Guid.NewGuid().ToString());
+                traceID = _contextFactory.Current.TraceID;// GetOrAddItem(context, CobwebDefaults.HeaderTraceID, ()=> Guid.NewGuid().ToString());
 
                 context.Request.Headers.Add(CobwebDefaults.HeaderTraceID, traceID.ToString());
+
+                _logger.LogInformation("mark request. traceID:{0}", traceID);
             }
             else
             {
-                _contextFactory.Current.TraceID = Guid.Parse(context.Request.Headers[CobwebDefaults.HeaderTraceID]);
+                traceID = Guid.Parse(context.Request.Headers[CobwebDefaults.HeaderTraceID]);
+                _contextFactory.Current.TraceID = traceID;
+                _logger.LogInformation("receive request. traceID:{0}", traceID);
             }
+
 
             return next(context);
         }

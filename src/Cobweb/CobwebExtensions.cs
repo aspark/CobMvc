@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
@@ -48,7 +49,7 @@ namespace Cobweb
         //}
 
         /// <summary>
-        /// 启用cobweb
+        /// 启用cobweb，放置在UseMvc()之前
         /// </summary>
         /// <param name="mvcBuilder"></param>
         /// <returns></returns>
@@ -85,6 +86,9 @@ namespace Cobweb
                     }
                 };
             }
+
+            var logger = mvcBuilder.ApplicationServices.GetRequiredService<ILoggerFactory>().CreateLogger<CobwebMiddleware>();
+            logger.LogInformation("register service:{0}\t{1}", svcInfo.Name, svcInfo.Address);
 
             var reg = mvcBuilder.ApplicationServices.GetRequiredService<IServiceRegistration>();
             reg.Register(svcInfo);

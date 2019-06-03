@@ -2,6 +2,7 @@
 using Cobweb.Core;
 using Cobweb.Core.Client;
 using Cobweb.Core.Service;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,9 +19,11 @@ namespace Cobweb.Client
         ICobRequest _request = null;
         IServiceRegistration _serviceDiscovery = null;
         ICobServiceDescriptorGenerator _descriptorGenerator = null;
+        ILoggerFactory _loggerFactory = null;
 
-        public CobClientFactory(ICobRequest request, IServiceRegistration serviceDiscovery, ICobServiceDescriptorGenerator descriptorGenerator)
+        public CobClientFactory(ICobRequest request, IServiceRegistration serviceDiscovery, ICobServiceDescriptorGenerator descriptorGenerator, ILoggerFactory loggerFactory)
         {
+            _loggerFactory = loggerFactory;
             _request = request;
             _serviceDiscovery = serviceDiscovery;
             _descriptorGenerator = descriptorGenerator;
@@ -32,7 +35,7 @@ namespace Cobweb.Client
             var obj = new ProxyGenerator().CreateInterfaceProxyWithoutTarget<T>(_interceptor.GetOrAdd(typeof(T), type=> {
                 var desc = _descriptorGenerator.Create(type);
 
-                return new CobClientIInterceptor(_request, desc, _serviceDiscovery);
+                return new CobClientIInterceptor(_request, desc, _serviceDiscovery, _loggerFactory);
             }));
 
             return obj;
@@ -40,7 +43,7 @@ namespace Cobweb.Client
 
         public ICobClient GetProxy(CobServiceDescriptor desc)//指定post
         {
-            return new CommonCobClient(_request, _serviceDiscovery, desc);
+            return new CommonCobClient(_request, _serviceDiscovery, desc, _loggerFactory);
         }
 
     }
@@ -50,12 +53,16 @@ namespace Cobweb.Client
         CobServiceDescriptor _desc = null;
         ICobRequest _request = null;
         ICobServiceSelector _selector = null;
+        ILoggerFactory _loggerFactory = null;
+        ILogger _logger = null;
 
-        public CobClientIInterceptor(ICobRequest request, CobServiceDescriptor desc, IServiceRegistration serviceDiscovery)
+        public CobClientIInterceptor(ICobRequest request, CobServiceDescriptor desc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory)
         {
+            _loggerFactory = loggerFactory;
+            _logger = _loggerFactory.CreateLogger<CobClientIInterceptor>();
             _desc = desc;
             _request = request;
-            _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName);
+            _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName, _loggerFactory.CreateLogger<DefaultServiceSelector>());
         }
 
         public void Intercept(IInvocation invocation)
@@ -64,6 +71,8 @@ namespace Cobweb.Client
             var target = _selector.GetOne();
             if (target != null)
             {
+                _logger?.LogInformation("invoke {0}", invocation.Method);
+
                 var url = _desc.GetUrl(target, invocation.Method);
 
                 //设置调用参数
@@ -74,7 +83,7 @@ namespace Cobweb.Client
                 }
 
                 var ctx = new TypedCobRequestContext() { Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
-                //todo:重试
+                //todo:重试，是否需要重选service?
                 using (var wrap = new ServiceInfoExecution(_selector))
                 {
                     wrap.Wrap(target, () =>
@@ -89,6 +98,8 @@ namespace Cobweb.Client
                     return;
                 }
             }
+
+            _logger.LogError("can not get available service for:{0}", _desc.ServiceName);
 
             //todo:无服务可用，降级？
             throw new Exception("failover");
@@ -148,12 +159,13 @@ namespace Cobweb.Client
         CobServiceDescriptor _desc = null;
         ICobRequest _request = null;
         ICobServiceSelector _selector = null;
+        //ILogger _logger = null;
 
-        public CommonCobClient(ICobRequest request, IServiceRegistration serviceDiscovery, CobServiceDescriptor desc)
+        public CommonCobClient(ICobRequest request, IServiceRegistration serviceDiscovery, CobServiceDescriptor desc, ILoggerFactory loggerFactory)
         {
             _desc = desc;
             _request = request;
-            _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName);
+            _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName, loggerFactory?.CreateLogger<DefaultServiceSelector>());
         }
 
         public Task<T> Invoke<T>(string action, Dictionary<string, object> parameters, object state)

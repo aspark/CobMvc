@@ -1,5 +1,6 @@
 ﻿using Cobweb.Core;
 using Cobweb.Core.Service;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -15,8 +16,11 @@ namespace Cobweb.Client
     {
         HttpClient _client = null;
         ICobwebContextFactory _contextFactory = null;
-        public HttpClientCobRequest(ICobwebContextFactory contextFactory)
+        ILogger<HttpClientCobRequest> _logger = null;
+
+        public HttpClientCobRequest(ICobwebContextFactory contextFactory, ILogger<HttpClientCobRequest> logger)
         {
+            _logger = logger;
             _contextFactory = contextFactory;
             _client = new HttpClient();
         }
@@ -71,6 +75,8 @@ namespace Cobweb.Client
                 }
             }
 
+            _logger?.LogDebug("http client begin request:{0}", url);
+
             var msg = new HttpRequestMessage(method, url);
 
             if (passViaBody)
@@ -80,8 +86,9 @@ namespace Cobweb.Client
 
             //添加traceid等
             msg.Headers.UserAgent.Clear();
-            msg.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("cobweb", "0.0.1"));
+            msg.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(CobwebDefaults.UserAgent, "0.0.1"));
             msg.Headers.Add(CobwebDefaults.HeaderTraceID, _contextFactory.Current.TraceID.ToString());
+            _logger?.LogDebug("set http request traceID:{0}", _contextFactory.Current.TraceID);
 
             var response = await _client.SendAsync(msg);
 

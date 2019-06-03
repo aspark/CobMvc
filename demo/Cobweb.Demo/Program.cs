@@ -32,7 +32,8 @@ namespace Cobweb.Demo
             {
                 log.ClearProviders();
                 log.AddConsole();
-                log.SetMinimumLevel(LogLevel.Error);
+                log.SetMinimumLevel(LogLevel.Trace);
+                log.AddFilter((n, l)=>!n.StartsWith("Microsoft."));
             })
             .UseKestrel()
             .UseContentRoot(Directory.GetCurrentDirectory())

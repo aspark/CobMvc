@@ -1,5 +1,6 @@
 ﻿using Cobweb.Core.Client;
 using Cobweb.Core.Service;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,10 +17,11 @@ namespace Cobweb.Client
         ConcurrentDictionary<string, ServiceInfoStatus> _services = new ConcurrentDictionary<string, ServiceInfoStatus>();
         IServiceRegistration _serviceRegistration;
         string _serviceName;
+        ILogger<DefaultServiceSelector> _logger;
 
-
-        public DefaultServiceSelector(IServiceRegistration serviceDiscovery, string serviceName)
+        public DefaultServiceSelector(IServiceRegistration serviceDiscovery, string serviceName, ILogger<DefaultServiceSelector> logger)
         {
+            _logger = logger;
             _serviceRegistration = serviceDiscovery;
             _serviceName = serviceName;
         }
@@ -39,6 +41,8 @@ namespace Cobweb.Client
         private async Task Refresh()
         {
             var services = await _serviceRegistration.GetByName(_serviceName);
+            _logger?.LogInformation("find {0} servcies for {1}", services.Count, _serviceName);
+
             var exists = new HashSet<string>();
             foreach (var svc in services)
             {
@@ -75,6 +79,7 @@ namespace Cobweb.Client
                 {
                     services[index].RequestCount++;
                     target = services[index].Service;
+                    _logger?.LogInformation("select service:{0}", index);
 
                     break;
                 }
