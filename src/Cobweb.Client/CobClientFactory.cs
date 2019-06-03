@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -82,15 +83,45 @@ namespace Cobweb.Client
                     parameters[names[i]] = invocation.Arguments[i];
                 }
 
-                var ctx = new TypedCobRequestContext() { Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
+                var isTask = false;
+                var returnType = invocation.Method.ReturnType;
+                if(typeof(Task).IsAssignableFrom(returnType))
+                {
+                    
+                    isTask = true;
+                    if (returnType.IsGenericType)
+                        returnType = returnType.GetGenericArguments().First();
+                    else
+                        returnType = null;//无返回值
+                }
+                else if(returnType == typeof(void))
+                {
+                    returnType = null;
+                }
+
+                var ctx = new TypedCobRequestContext() { Url = url, Parameters = parameters, ReturnType = returnType, Method = invocation.Method };
                 //todo:重试，是否需要重选service?
                 using (var wrap = new ServiceInfoExecution(_selector))
                 {
                     wrap.Wrap(target, () =>
                     {
-                        var ret = _request.DoRequest(ctx, null).Result;
+                        var ret = _request.DoRequest(ctx, null);
 
-                        invocation.ReturnValue = ret;
+                        if (isTask)
+                        {
+                            if(returnType == null)
+                            {
+                                invocation.ReturnValue = ret;//.ContinueWith(t => Task.FromResult(t.Result));
+                            }
+                            else
+                            {
+                                invocation.ReturnValue = CreateGenericTask(returnType, ret);
+                            }
+                        }
+                        else
+                        {
+                            invocation.ReturnValue = ret.Result;
+                        }
 
                         return (object)null;
                     });
@@ -103,6 +134,17 @@ namespace Cobweb.Client
 
             //todo:无服务可用，降级？
             throw new Exception("failover");
+        }
+
+        private Task CreateGenericTask(Type type, Task<object> obj)
+        {
+            var gt = typeof(TaskCompletionSource<>).MakeGenericType(type);
+            var tcs = Activator.CreateInstance(gt);
+            obj.ContinueWith(t => {
+                gt.GetMethod(nameof(TaskCompletionSource<int>.TrySetResult)).Invoke(tcs, new[] { t.Result });
+            });
+
+            return gt.GetProperty(nameof(TaskCompletionSource<int>.Task)).GetValue(tcs) as Task;
         }
     }
 

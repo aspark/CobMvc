@@ -64,7 +64,7 @@ namespace Cobweb.Demo.Controllers
         }
 
         [HttpPost]
-        public Task<UserInfo> SaveUserInfo(UserInfo user)
+        public Task SaveUserInfo(UserInfo user)
         {
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");
 
@@ -73,6 +73,14 @@ namespace Cobweb.Demo.Controllers
             user.Addr = time;
 
             return Task.FromResult(user);
+        }
+
+        [HttpGet]
+        public void Mark(int ms)
+        {
+            var time = DateTime.Now.ToString("HH:mm:ss.ffff");
+
+            Console.WriteLine($"{time}\t{_cobwebContextFactory.Current.TraceID}\tinvoke Mark");
         }
     }
 }

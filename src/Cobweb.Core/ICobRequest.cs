@@ -19,6 +19,9 @@ namespace Cobweb.Core
 
         //public object Body { get; set; }
 
+        /// <summary>
+        /// 非Task,如果为void非为null
+        /// </summary>
         public Type ReturnType { get; set; }
     }
 

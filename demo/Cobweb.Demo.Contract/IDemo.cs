@@ -18,7 +18,9 @@ namespace Cobweb.Demo.Contract
         Task<UserInfo> GetUserInfo(string name);
 
 
-        Task<UserInfo> SaveUserInfo(UserInfo user);
+        Task SaveUserInfo(UserInfo user);
+
+        void Mark(int ms);
     }
 
     public class UserInfo

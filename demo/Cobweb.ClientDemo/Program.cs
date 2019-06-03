@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using Cobweb.Consul;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace Cobweb.ClientDemo
 {
@@ -14,10 +15,10 @@ namespace Cobweb.ClientDemo
         {
             Console.WriteLine("press Esc to exit!");
 
-            StartMain();
+            StartMain().Wait();
         }
 
-        static void StartMain()
+        static async Task StartMain()
         {
             var services = new ServiceCollection();
 
@@ -35,6 +36,7 @@ namespace Cobweb.ClientDemo
             Console.WriteLine("2: GetOtherNames");
             Console.WriteLine("3: GetUserInfo");
             Console.WriteLine("4: SaveUserInfo");
+            Console.WriteLine("5: Mark");
 
             ConsoleKeyInfo key;
             while ((key = Console.ReadKey()).Key != ConsoleKey.Escape)
@@ -52,10 +54,17 @@ namespace Cobweb.ClientDemo
                         ret = client.GetOtherNames();
                         break;
                     case '3':
-                        ret = client.GetUserInfo("name" + DateTime.Now.Second);
+                        ret = await client.GetUserInfo("name" + DateTime.Now.Second);
                         break;
                     case '4':
-                        ret = client.SaveUserInfo(new UserInfo { ID = DateTime.Now.Second, Name="name", Addr = "" });
+                        await client.SaveUserInfo(new UserInfo { ID = DateTime.Now.Second, Name = "name", Addr = "" }).ContinueWith(t => {
+                            Console.WriteLine("after SaveUserInfo...");
+                        });
+                        ret = null;
+                        break;
+                    case '5':
+                        client.Mark(DateTime.Now.Second);
+                        ret = null;
                         break;
                 }
 

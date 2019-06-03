@@ -94,7 +94,12 @@ namespace Cobweb.Client
 
             response.EnsureSuccessStatusCode();//抛出异常
 
-            return JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync(), context.ReturnType);
+            if(context.ReturnType != null)
+            {
+                return JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync(), context.ReturnType);
+            }
+
+            return null;
         }
     }
 
