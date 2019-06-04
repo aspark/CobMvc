@@ -128,23 +128,50 @@ namespace Cobweb.Client
         {
             var sw = new Stopwatch();
 
-            //todo:重试
+            //todo:重试?
+            Exception error = null;
+            T result = default(T);
+
             try
             {
-                return action();
+                result = action();
             }
             catch(Exception ex)
             {
-                //todo:熔断
-                _selector.SetServiceFailed(target);
+                error = ex.GetBaseException();
             }
-            finally
+
+            void SetFinallyState()
             {
+                //todo:熔断?
+                if (error != null)
+                {
+                    _selector.SetServiceFailed(target);
+
+                    //throw error;//???
+                }
+
                 //todo:设置时间 or 异常
                 _selector.SetServiceResponseTime(target, sw.Elapsed);
             }
 
-            return default(T);
+            if (result != null)
+            {
+                if (typeof(Task).IsAssignableFrom(result.GetType()))
+                {
+                    (result as Task).ContinueWith(_ =>
+                    {
+                        error = _.Exception?.GetBaseException();
+                        SetFinallyState();
+                    });
+                }
+            }
+            else
+            {
+                SetFinallyState();
+            }
+
+            return result;
         }
 
         public void Dispose()
@@ -191,5 +218,4 @@ namespace Cobweb.Client
         }
     }
 
-    //public class ad: ICobClient
 }
