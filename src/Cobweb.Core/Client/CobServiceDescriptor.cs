@@ -1,4 +1,5 @@
-﻿using Cobweb.Core.Service;
+﻿using Cobweb.Core.Common;
+using Cobweb.Core.Service;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -48,14 +49,18 @@ namespace Cobweb.Core.Client
         }
 
         /// <summary>
-        /// 使用<paramref name="from"/>中的非空值覆盖当前值
+        /// 使用<paramref name="from"/>中的非空值覆盖当前值, 但Path为合并
         /// </summary>
         /// <param name="from"></param>
         /// <returns></returns>
         public virtual CobServiceDescriptor Extend(CobServiceDescriptor from)
         {
             AssignByValidValue(from.ServiceName, v => ServiceName = v);
-            AssignByValidValue(from.Path, v => Path = v);
+
+            AssignByValidValue(from.Path, v => {
+                Path = UriHelper.Combine(Path, v);
+            });
+
             AssignByValidValue(from.Retry, v => Retry = v);
             AssignByValidValue(from.Timeout, v => Timeout = v);
 
@@ -101,15 +106,15 @@ namespace Cobweb.Core.Client
 
             var desc = this.Clone();
 
-            var usePathAsUrl = false;
+            var skipMethodName = false;
             //合并方法与全局配置
             if (ActionDescriptors.ContainsKey(method))
             {
-                usePathAsUrl = !string.IsNullOrWhiteSpace(ActionDescriptors[method].Path);
+                skipMethodName = !string.IsNullOrWhiteSpace(ActionDescriptors[method].Path);
                 desc.Extend(ActionDescriptors[method]);
             }
 
-            return usePathAsUrl ? base.GetUrl(service.Address, desc.Path) : desc.GetUrl(service, method.Name);
+            return skipMethodName ? base.GetUrl(service.Address, desc.Path) : desc.GetUrl(service, method.Name);
         }
     }
 

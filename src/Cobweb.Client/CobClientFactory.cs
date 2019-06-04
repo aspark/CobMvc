@@ -72,7 +72,7 @@ namespace Cobweb.Client
             var target = _selector.GetOne();
             if (target != null)
             {
-                _logger?.LogInformation("invoke {0}", invocation.Method);
+                _logger?.LogDebug("invoke {0}", invocation.Method);
 
                 var url = _desc.GetUrl(target, invocation.Method);
 

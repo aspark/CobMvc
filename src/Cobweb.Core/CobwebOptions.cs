@@ -16,5 +16,10 @@ namespace Cobweb.Core
         //public int Port { get; set; }
 
         public string HealthCheck { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int MaxJump { get; set; }
     }
 }

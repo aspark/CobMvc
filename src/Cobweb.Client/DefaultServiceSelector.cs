@@ -41,7 +41,7 @@ namespace Cobweb.Client
         private async Task Refresh()
         {
             var services = await _serviceRegistration.GetByName(_serviceName);
-            _logger?.LogInformation("find {0} servcies for {1}", services.Count, _serviceName);
+            _logger?.LogDebug("find {0} servcies for {1}", services.Count, _serviceName);
 
             var exists = new HashSet<string>();
             foreach (var svc in services)
@@ -79,7 +79,7 @@ namespace Cobweb.Client
                 {
                     services[index].RequestCount++;
                     target = services[index].Service;
-                    _logger?.LogInformation("select service:{0}", index);
+                    _logger?.LogDebug("select service:{0}", index);
 
                     break;
                 }

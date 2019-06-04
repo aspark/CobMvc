@@ -32,6 +32,7 @@ namespace Cobweb.Demo.Controllers
 
         // GET api/values
         [HttpGet]
+        [Route("/api/GetNames")]
         public string[] GetNames()
         {
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");

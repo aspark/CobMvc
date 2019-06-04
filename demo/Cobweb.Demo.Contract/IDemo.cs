@@ -10,7 +10,7 @@ namespace Cobweb.Demo.Contract
     [CobService("CobwebDemo", Path ="/api/test/")]
     public interface IDemo
     {
-        [CobService(Path = "/api/test/GetNames")]
+        [CobService(Path = "/api/GetNames")]
         string[] GetNames();
 
         string[] GetOtherNames();

@@ -25,6 +25,7 @@ namespace Cobweb.Demo
 
             var builder = new WebHostBuilder();
             builder
+            //.ConfigureAppConfiguration(builder=>builder.AddJsonFile)
             .ConfigureServices(services => {
 
             })

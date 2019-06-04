@@ -1,6 +1,7 @@
 ﻿using Cobweb.Client;
 using Cobweb.Core;
 using Cobweb.Core.Client;
+using Cobweb.Core.Common;
 using Cobweb.Core.Service;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -63,6 +64,9 @@ namespace Cobweb
             {
                 var addr = mvcBuilder.ServerFeatures.Get<IServerAddressesFeature>();
                 options.ServiceAddress = addr.Addresses.First();
+#if !DEBUG
+                options.ServiceAddress = NetHelper.ChangeToExternal(options.ServiceAddress);
+#endif
             }
 
             var uri = new Uri(options.ServiceAddress);
@@ -71,7 +75,7 @@ namespace Cobweb
             {
                 Address = uri.ToString(),
                 Name = options.ServiceName,
-                ID = options.ServiceAddress,//todo:transform to alpha
+                ID = StringHelper.ToMD5(options.ServiceAddress + options.ServiceName),//
                 Port = uri.Port
             };
 
@@ -80,7 +84,7 @@ namespace Cobweb
                 svcInfo.CheckInfoes = new[] {
                     new ServiceCheckInfo{
                         Type = ServiceCheckInfoType.Http,
-                        Target = new Uri(options.ServiceAddress.TrimEnd('/') + "/" + options.HealthCheck.TrimStart('/')),
+                        Target = new Uri(UriHelper.Combine(options.ServiceAddress, options.HealthCheck)),
                         Interval = TimeSpan.FromSeconds(3),
                         Timeout = TimeSpan.FromSeconds(60)
                     }
@@ -88,7 +92,7 @@ namespace Cobweb
             }
 
             var logger = mvcBuilder.ApplicationServices.GetRequiredService<ILoggerFactory>().CreateLogger<CobwebMiddleware>();
-            logger.LogInformation("register service:{0}\t{1}", svcInfo.Name, svcInfo.Address);
+            logger.LogDebug("register service:{0}\t{1}", svcInfo.Name, svcInfo.Address);
 
             var reg = mvcBuilder.ApplicationServices.GetRequiredService<IServiceRegistration>();
             reg.Register(svcInfo);

@@ -21,6 +21,9 @@ namespace Cobweb
 
         public Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
+
+            //todo:最长链路限制
+
             //为所有进入的请求添加TraceID等信息
             Guid traceID;
             if (!context.Request.Headers.ContainsKey(CobwebDefaults.HeaderTraceID))
