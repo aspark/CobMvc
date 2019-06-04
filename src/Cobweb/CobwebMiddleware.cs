@@ -10,34 +10,33 @@ namespace Cobweb
 {
     internal class CobwebMiddleware : IMiddleware
     {
-        ICobwebContextFactory _contextFactory = null;
+        ICobwebContextAccessor _contextAccessor = null;
         ILogger<CobwebMiddleware> _logger = null;
 
-        public CobwebMiddleware(ICobwebContextFactory contextFactory, ILogger<CobwebMiddleware> logger)
+        public CobwebMiddleware(ICobwebContextAccessor contextAccessor, ILogger<CobwebMiddleware> logger)
         {
             _logger = logger;
-            _contextFactory = contextFactory;
+            _contextAccessor = contextAccessor;
         }
 
         public Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
-            //添加TraceID等信息
+            //为所有进入的请求添加TraceID等信息
             Guid traceID;
             if (!context.Request.Headers.ContainsKey(CobwebDefaults.HeaderTraceID))
             {
-                traceID = _contextFactory.Current.TraceID;// GetOrAddItem(context, CobwebDefaults.HeaderTraceID, ()=> Guid.NewGuid().ToString());
+                traceID = _contextAccessor.Current.TraceID;// GetOrAddItem(context, CobwebDefaults.HeaderTraceID, ()=> Guid.NewGuid().ToString());
 
                 context.Request.Headers.Add(CobwebDefaults.HeaderTraceID, traceID.ToString());
 
-                _logger.LogInformation("mark request. traceID:{0}", traceID);
+                _logger.LogDebug("mark request. traceID:{0}", traceID);
             }
             else
             {
                 traceID = Guid.Parse(context.Request.Headers[CobwebDefaults.HeaderTraceID]);
-                _contextFactory.Current.TraceID = traceID;
-                _logger.LogInformation("receive request. traceID:{0}", traceID);
+                _contextAccessor.Current.TraceID = traceID;
+                _logger.LogDebug("receive request. traceID:{0}", traceID);
             }
-
 
             return next(context);
         }

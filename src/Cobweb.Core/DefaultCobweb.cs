@@ -27,7 +27,7 @@ namespace Cobweb.Core
         {
             _services.AddSingleton<ICobweb>(this);
             _services.TryAddSingleton<ICobServiceDescriptorGenerator, CobServiceDescriptorGenerator>();
-            _services.TryAddSingleton<ICobwebContextFactory, CobwebContextFactory>();
+            _services.TryAddSingleton<ICobwebContextAccessor, CobwebContextAccessor>();
             _services.AddOptions<CobwebOptions>();
 
             _configServices.ForEach(config => config(_services));

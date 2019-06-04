@@ -62,12 +62,12 @@ namespace Cobweb.Core
         }
     }
 
-    public interface ICobwebContextFactory
+    public interface ICobwebContextAccessor
     {
         CobwebContext Current { get; }
     }
 
-    public class CobwebContextFactory : ICobwebContextFactory
+    public class CobwebContextAccessor : ICobwebContextAccessor
     {
         private static CobwebContext _current = new CobwebContext();
         public CobwebContext Current

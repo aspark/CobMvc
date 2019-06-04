@@ -83,23 +83,7 @@ namespace Cobweb.Client
                     parameters[names[i]] = invocation.Arguments[i];
                 }
 
-                var isTask = false;
-                var returnType = invocation.Method.ReturnType;
-                if(typeof(Task).IsAssignableFrom(returnType))
-                {
-                    
-                    isTask = true;
-                    if (returnType.IsGenericType)
-                        returnType = returnType.GetGenericArguments().First();
-                    else
-                        returnType = null;//无返回值
-                }
-                else if(returnType == typeof(void))
-                {
-                    returnType = null;
-                }
-
-                var ctx = new TypedCobRequestContext() { Url = url, Parameters = parameters, ReturnType = returnType, Method = invocation.Method };
+                var ctx = new TypedCobRequestContext() { Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
                 //todo:重试，是否需要重选service?
                 using (var wrap = new ServiceInfoExecution(_selector))
                 {
@@ -107,23 +91,7 @@ namespace Cobweb.Client
                     {
                         var ret = _request.DoRequest(ctx, null);
 
-                        if (isTask)
-                        {
-                            if(returnType == null)
-                            {
-                                invocation.ReturnValue = ret;//.ContinueWith(t => Task.FromResult(t.Result));
-                            }
-                            else
-                            {
-                                invocation.ReturnValue = CreateGenericTask(returnType, ret);
-                            }
-                        }
-                        else
-                        {
-                            invocation.ReturnValue = ret.Result;
-                        }
-
-                        return (object)null;
+                        return invocation.ReturnValue = ret;
                     });
 
                     return;
@@ -134,17 +102,6 @@ namespace Cobweb.Client
 
             //todo:无服务可用，降级？
             throw new Exception("failover");
-        }
-
-        private Task CreateGenericTask(Type type, Task<object> obj)
-        {
-            var gt = typeof(TaskCompletionSource<>).MakeGenericType(type);
-            var tcs = Activator.CreateInstance(gt);
-            obj.ContinueWith(t => {
-                gt.GetMethod(nameof(TaskCompletionSource<int>.TrySetResult)).Invoke(tcs, new[] { t.Result });
-            });
-
-            return gt.GetProperty(nameof(TaskCompletionSource<int>.Task)).GetValue(tcs) as Task;
         }
     }
 
@@ -210,7 +167,7 @@ namespace Cobweb.Client
             _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName, loggerFactory?.CreateLogger<DefaultServiceSelector>());
         }
 
-        public Task<T> Invoke<T>(string action, Dictionary<string, object> parameters, object state)
+        public T Invoke<T>(string action, Dictionary<string, object> parameters, object state)
         {
             var target = _selector.GetOne();
             if (target != null)
@@ -223,14 +180,14 @@ namespace Cobweb.Client
                 {
                     return wrap.Wrap(target, () =>
                     {
-                        var ret = _request.DoRequest(ctx, state).ContinueWith(t => (T)t.Result);
+                        var ret = (T)_request.DoRequest(ctx, state);
 
                         return ret;
                     });
                 }
             }
 
-            return Task.FromResult(default(T));
+            return default(T);
         }
     }
 
