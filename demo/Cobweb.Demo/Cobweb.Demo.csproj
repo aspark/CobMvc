@@ -14,9 +14,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Cobweb.Consul.Configuration\Cobweb.Consul.Configuration.csproj" />
     <ProjectReference Include="..\..\src\Cobweb.Consul\Cobweb.Consul.csproj" />
     <ProjectReference Include="..\..\src\Cobweb\Cobweb.csproj" />
     <ProjectReference Include="..\Cobweb.Demo.Contract\Cobweb.Demo.Contract.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

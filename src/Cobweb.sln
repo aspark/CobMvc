@@ -9,9 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobweb", "Cobweb\Cobweb.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobweb.Consul", "Cobweb.Consul\Cobweb.Consul.csproj", "{3BE5705F-10BA-4155-85FB-4FEC55DE4DF1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{C594D2D8-4690-48C9-AF70-049C50AF701B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0.Core", "0.Core", "{C594D2D8-4690-48C9-AF70-049C50AF701B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", "{97C67ED8-304A-459A-9D3D-C5F98121125E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1.Extensions", "1.Extensions", "{97C67ED8-304A-459A-9D3D-C5F98121125E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobweb.Protobuf", "Cobweb.Protobuf\Cobweb.Protobuf.csproj", "{238223A2-B212-48BA-9373-44BE8952B3DB}"
 EndProject
@@ -21,13 +21,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobweb.Test", "Cobweb.Test\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobweb.Client", "Cobweb.Client\Cobweb.Client.csproj", "{F781D168-4600-4933-AA95-F76E248B28C6}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demo", "Demo", "{84445325-1C8A-4460-A8AB-0A0418FBDFE8}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3.Demo", "3.Demo", "{84445325-1C8A-4460-A8AB-0A0418FBDFE8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobweb.ClientDemo", "..\demo\Cobweb.ClientDemo\Cobweb.ClientDemo.csproj", "{D356EDEA-DA4A-4E16-A42E-F3284F8BB2E9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobweb.Demo", "..\demo\Cobweb.Demo\Cobweb.Demo.csproj", "{4BB81BE5-80FE-48C5-AE14-EAE062566BCF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cobweb.Demo.Contract", "..\demo\Cobweb.Demo.Contract\Cobweb.Demo.Contract.csproj", "{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobweb.Consul.Configuration", "Cobweb.Consul.Configuration\Cobweb.Consul.Configuration.csproj", "{B3B5145D-5A10-48C4-B915-6E95189E8B90}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +77,10 @@ Global
 		{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3B5145D-5A10-48C4-B915-6E95189E8B90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3B5145D-5A10-48C4-B915-6E95189E8B90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3B5145D-5A10-48C4-B915-6E95189E8B90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3B5145D-5A10-48C4-B915-6E95189E8B90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -89,6 +95,7 @@ Global
 		{D356EDEA-DA4A-4E16-A42E-F3284F8BB2E9} = {84445325-1C8A-4460-A8AB-0A0418FBDFE8}
 		{4BB81BE5-80FE-48C5-AE14-EAE062566BCF} = {84445325-1C8A-4460-A8AB-0A0418FBDFE8}
 		{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E} = {84445325-1C8A-4460-A8AB-0A0418FBDFE8}
+		{B3B5145D-5A10-48C4-B915-6E95189E8B90} = {97C67ED8-304A-459A-9D3D-C5F98121125E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {18F7E213-AC3B-4608-8E76-A162E4265FC8}

@@ -16,5 +16,10 @@ namespace Cobweb.Consul
                 //services.AddSingleton<ICobConfiguration, ConsulConfiguration>();
             });
         }
+
+        //public static void AddConsul(this IConfigurationBuilder builder)
+        //{
+        //    builder.Sources.Add()
+        //}
     }
 }

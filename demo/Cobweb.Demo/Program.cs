@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Cobweb.Consul;
 using Cobweb.Core.Common;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Cobweb.Consul.Configuration;
 
 namespace Cobweb.Demo
 {
@@ -25,7 +27,12 @@ namespace Cobweb.Demo
 
             var builder = new WebHostBuilder();
             builder
-            //.ConfigureAppConfiguration(builder=>builder.AddJsonFile)
+            .ConfigureAppConfiguration(b=> {
+                b.AddJsonFile("appsettings.json");
+                b.AddConsul(consul => {
+                    consul.Address = new Uri("http://localhost:8500");
+                });
+            })
             .ConfigureServices(services => {
 
             })
