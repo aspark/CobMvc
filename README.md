@@ -12,7 +12,7 @@ CobWeb基于asp..net core mvc开发，定位为一款简单、低侵入性的微
 
 #### 注册
 
-在mvc `Startup`类添加MVC组件时`AddCobweb()`即可
+引用 Cobweb后, 在mvc `Startup`类添加MVC组件时`AddCobweb()`即可
 ```C#
 services.AddMvc()
         .AddCobweb(cob=> {
@@ -93,7 +93,15 @@ Console.WriteLine("返回:{0}", string.Join(", ", strs));
 > todo
 
 ### 统一配置 
-> todo
+引用Cobweb.Consul.Configuration项目，基于consul kv统一分发配置。兼容asp.net core 原生`IConfiguration`方式，如：
+```C#
+builder.ConfigureAppConfiguration(b=> {
+    b.AddJsonFile("appsettings.json");
+    b.AddConsul(consul => {
+        consul.Address = new Uri("http://localhost:8500");
+    });
+})
+```
 
 
 ### 统一日志

@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Folder Include="Cache\" />
+    <Folder Include="Config\" />
   </ItemGroup>
 
   <ItemGroup>
