@@ -32,14 +32,15 @@ namespace Cobweb.ClientDemo
 
             //config.Bind()
 
-            //var setting = new Settings();
-            //config.Bind("item1", setting);
+            var setting = new Settings();
+            config.GetSection("current");
+            config.Bind("current", setting);
 
             services.AddSingleton<IConfiguration>(config);
 
             services.AddTransient<Business>();
 
-            services.Configure<Settings>(config.GetSection("item1"));
+            services.Configure<Settings>(config.GetSection("current"));
 
             var provider = services.BuildServiceProvider();
 
@@ -56,8 +57,8 @@ namespace Cobweb.ClientDemo
         public Business(IServiceProvider serviceProvider, IOptionsMonitor<Settings> settings)
         {
             _settings = settings;
-            Console.WriteLine("current settings:" + settings.CurrentValue?.A);
-            _settings.OnChange((s, n) => Console.WriteLine("new settings:" + n));
+            Console.WriteLine("current Token:" + settings.CurrentValue?.auth?.Token);
+            _settings.OnChange((s, n) => Console.WriteLine("new Token:" + s?.auth?.Token));
             _serviceProvider = serviceProvider;
         }
 
@@ -115,8 +116,16 @@ namespace Cobweb.ClientDemo
         }
     }
 
+    //{"db":"value","auth":{"token":2}}
     public class Settings
     {
-        public int A { get; set; }
+        public string DB { get; set; }
+
+        public Auth auth { get; set; }
+    }
+
+    public class Auth
+    {
+        public string Token { get; set; }
     }
 }

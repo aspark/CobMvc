@@ -45,7 +45,11 @@ namespace Cobweb.Consul.Configuration
                     _lastIndex = res.LastIndex;
                 }
 
-                var data = res.Response.SelectMany(p => ConvertValue(p)).ToDictionary(p => p.Key, p => p.Value);
+                var data = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+                foreach (var pair in res.Response.SelectMany(p => ConvertValue(p)))
+                {
+                    data[pair.Key] = pair.Value;//can override older key
+                }
 
                 Data = data;
 
@@ -62,9 +66,9 @@ namespace Cobweb.Consul.Configuration
 
         }
 
-        private Dictionary<string, string> ConvertValue(KVPair pair)
+        private List<KeyValuePair<string, string>> ConvertValue(KVPair pair)
         {
-            var dic = new Dictionary<string, string>();
+            var dic = new List<KeyValuePair<string, string>>();
             var val = Encoding.UTF8.GetString(pair.Value);
 
             if (!string.IsNullOrWhiteSpace(val))
@@ -74,10 +78,10 @@ namespace Cobweb.Consul.Configuration
                     try
                     {
                         var obj = JContainer.Parse(val);
-                        foreach(var item in FlattenJsonObject(_parent.Root, obj))
+                        foreach(var item in FlattenJsonObject(pair.Key, obj))
                         {
                             if(ConvertToConfigurationKey(_parent.Root, item.path, out string key))
-                                dic.Add(key, GetTokenString(item.token));
+                                dic.Add(new KeyValuePair<string, string>(key, GetTokenString(item.token)));
                         }
                     }
                     catch(Exception ex) { }
@@ -97,25 +101,26 @@ namespace Cobweb.Consul.Configuration
 
         private IEnumerable<(string path, JToken token)> FlattenJsonObject(string path, JToken token)
         {
-            //yield return (path, token);
-            if (token is JObject obj)
+            switch (token)
             {
-                foreach (var item in obj)
-                {
-                    foreach (var prop in FlattenJsonObject(path + "/" + item.Key, item.Value))
-                        yield return prop;
-                }
+                case JObject obj:
+                    foreach (var item in obj)
+                    {
+                        foreach (var prop in FlattenJsonObject(path + "/" + item.Key, item.Value))
+                            yield return prop;
+                    }
+                    break;
+                case JArray arr:
+                    for (int index = 0; index < arr.Count; index++)
+                    {
+                        foreach (var prop in FlattenJsonObject(path + "/{index}", arr[index]))
+                            yield return prop;
+                    }
+                    break;
+                default:
+                    yield return (path, token);//+ "/" + (token as JProperty).Name
+                    break;
             }
-            if (token is JArray arr)
-            {
-                for (int index = 0; index < arr.Count; index++)
-                {
-                    foreach (var prop in FlattenJsonObject(path + $"[{index}]", arr[index]))
-                        yield return prop;
-                }
-            }
-            
-            yield return (path, token);//+ "/" + (token as JProperty).Name
         }
 
         private bool ConvertToConfigurationKey(string prefix, string key, out string configKey)
