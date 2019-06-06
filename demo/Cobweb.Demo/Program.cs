@@ -28,7 +28,7 @@ namespace Cobweb.Demo
             var builder = new WebHostBuilder();
             builder
             .ConfigureAppConfiguration(b=> {
-                b.AddJsonFile("appsettings.json");
+                b.AddJsonFile("appsettings.json");//add default settings
                 b.AddConsul(consul => {
                     consul.Address = new Uri("http://localhost:8500");
                 });

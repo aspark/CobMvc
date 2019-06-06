@@ -1,6 +1,5 @@
 ﻿using Cobweb.Core;
 using Cobweb.Core.Client;
-using Cobweb.Core.Config;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
@@ -29,7 +28,6 @@ namespace Cobweb.Core
             _services.AddSingleton<ICobweb>(this);
             _services.TryAddSingleton<ICobServiceDescriptorGenerator, CobServiceDescriptorGenerator>();
             _services.TryAddSingleton<ICobwebContextAccessor, CobwebContextAccessor>();
-            _services.TryAddSingleton<ICobConfiguration, DefaultCobConfiguration>();
             _services.AddOptions<CobwebOptions>();
 
             _configServices.ForEach(config => config(_services));
