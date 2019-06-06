@@ -26,8 +26,14 @@ namespace Cobweb.ClientDemo
             });
 
             var configBuilder = new ConfigurationBuilder();
+            configBuilder.AddJsonFile("appsettings.json");
             configBuilder.AddConsul(c => c.Address = new Uri("http://localhost:8500"));
             var config = configBuilder.Build();
+
+            //config.Bind()
+
+            //var setting = new Settings();
+            //config.Bind("item1", setting);
 
             services.AddSingleton<IConfiguration>(config);
 

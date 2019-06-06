@@ -77,7 +77,7 @@ namespace Cobweb.Consul.Configuration
                         foreach(var item in FlattenJsonObject(_parent.Root, obj))
                         {
                             if(ConvertToConfigurationKey(_parent.Root, item.path, out string key))
-                                dic.Add(key, item.token.ToString());
+                                dic.Add(key, GetTokenString(item.token));
                         }
                     }
                     catch(Exception ex) { }
@@ -85,6 +85,14 @@ namespace Cobweb.Consul.Configuration
             }
 
             return dic;
+        }
+
+        private string GetTokenString(JToken token)
+        {
+            if (token.Type == JTokenType.Object || token.Type == JTokenType.Array)
+                return null;
+
+            return token.Value<string>();
         }
 
         private IEnumerable<(string path, JToken token)> FlattenJsonObject(string path, JToken token)
