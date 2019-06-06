@@ -4,8 +4,11 @@ using Cobweb.Demo.Contract;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Cobweb.Consul;
+using Cobweb.Consul.Configuration;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Cobweb.ClientDemo
 {
@@ -14,11 +17,45 @@ namespace Cobweb.ClientDemo
         static void Main(string[] args)
         {
             Console.WriteLine("press Esc to exit!");
+            var services = new ServiceCollection();
 
-            StartMain().Wait();
+            services.AddCobweb(cob => {
+                cob.UseConsul(opt => {
+                    opt.Address = new Uri("http://localhost:8500");
+                });
+            });
+
+            var configBuilder = new ConfigurationBuilder();
+            configBuilder.AddConsul(c => c.Address = new Uri("http://localhost:8500"));
+            var config = configBuilder.Build();
+
+            services.AddSingleton<IConfiguration>(config);
+
+            services.AddTransient<Business>();
+
+            services.Configure<Settings>(config.GetSection("item1"));
+
+            var provider = services.BuildServiceProvider();
+
+
+            provider.GetService<Business>().StartMain().Wait();
+        }
+    }
+
+    public class Business
+    {
+        IServiceProvider _serviceProvider = null;
+        IOptionsMonitor<Settings> _settings = null;
+
+        public Business(IServiceProvider serviceProvider, IOptionsMonitor<Settings> settings)
+        {
+            _settings = settings;
+            Console.WriteLine("current settings:" + settings.CurrentValue?.A);
+            _settings.OnChange((s, n) => Console.WriteLine("new settings:" + n));
+            _serviceProvider = serviceProvider;
         }
 
-        static async Task StartMain()
+        public async Task StartMain()
         {
             var services = new ServiceCollection();
 
@@ -28,8 +65,7 @@ namespace Cobweb.ClientDemo
                 });
             });
 
-            var provider = services.BuildServiceProvider();
-            var client = provider.GetService<ICobClientFactory>().GetProxy<IDemo>();
+            var client = _serviceProvider.GetService<ICobClientFactory>().GetProxy<IDemo>();
 
             Console.WriteLine("pls select(Esc to exit):");
             Console.WriteLine("1: GetNames");
@@ -71,5 +107,10 @@ namespace Cobweb.ClientDemo
                 Console.WriteLine("返回:{0}", JsonConvert.SerializeObject(ret));
             }
         }
+    }
+
+    public class Settings
+    {
+        public int A { get; set; }
     }
 }

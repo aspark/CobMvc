@@ -58,7 +58,7 @@ namespace Cobweb.Consul.Configuration
             }
 
             if(!_cts.IsCancellationRequested)
-                await LoadImpl(true).ConfigureAwait(false);
+                LoadImpl(true).ConfigureAwait(false);
 
         }
 
@@ -76,10 +76,11 @@ namespace Cobweb.Consul.Configuration
                         var obj = JContainer.Parse(val);
                         foreach(var item in FlattenJsonObject(_parent.Root, obj))
                         {
-                            dic.Add(ConvertToConfigurationKey(_parent.Root, item.path), (string)item.token);
+                            if(ConvertToConfigurationKey(_parent.Root, item.path, out string key))
+                                dic.Add(key, item.token.ToString());
                         }
                     }
-                    catch { }
+                    catch(Exception ex) { }
                 }
             }
 
@@ -88,6 +89,7 @@ namespace Cobweb.Consul.Configuration
 
         private IEnumerable<(string path, JToken token)> FlattenJsonObject(string path, JToken token)
         {
+            //yield return (path, token);
             if (token is JObject obj)
             {
                 foreach (var item in obj)
@@ -104,12 +106,16 @@ namespace Cobweb.Consul.Configuration
                         yield return prop;
                 }
             }
-            else
-                yield return (path, token);//+ "/" + (token as JProperty).Name
+            
+            yield return (path, token);//+ "/" + (token as JProperty).Name
         }
 
-        private string ConvertToConfigurationKey(string prefix, string key)
+        private bool ConvertToConfigurationKey(string prefix, string key, out string configKey)
         {
+            configKey = string.Empty;
+            if (key.Length <= prefix.Length)
+                return false;
+
             var result = new Span<char>(key.ToArray());
             var start = prefix.Length;
             while (result[start] == '/')
@@ -121,7 +127,9 @@ namespace Cobweb.Consul.Configuration
                     result[i] = ':';
             }
 
-            return new string(result.Slice(start).ToArray());
+            configKey = new string(result.Slice(start).ToArray());
+
+            return true;
         }
 
         public void Dispose()

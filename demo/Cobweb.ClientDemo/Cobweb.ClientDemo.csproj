@@ -6,11 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Cobweb.Client\Cobweb.Client.csproj" />
+    <ProjectReference Include="..\..\src\Cobweb.Consul.Configuration\Cobweb.Consul.Configuration.csproj" />
     <ProjectReference Include="..\..\src\Cobweb.Consul\Cobweb.Consul.csproj" />
     <ProjectReference Include="..\Cobweb.Demo.Contract\Cobweb.Demo.Contract.csproj" />
   </ItemGroup>
