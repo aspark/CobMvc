@@ -1,7 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Copyright>MIT</Copyright>
+    <Description>a simple microservice framework base on asp.net core mvc</Description>
+    <Authors>aspark</Authors>
+    <Company>aspark</Company>
+    <PackageId>Kobweb</PackageId>
+    <PackageProjectUrl>https://github.com/aspark/Cobweb</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aspark/Cobweb</RepositoryUrl>
+    <PackageTags>microservice asp.net core mvc</PackageTags>
+    <Version>0.0.1-alpha</Version>
+    <Product>Kobweb</Product>
+    <PackageLicenseExpression></PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
