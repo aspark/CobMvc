@@ -71,6 +71,7 @@ namespace Cobweb.Consul.Configuration
             var dic = new List<KeyValuePair<string, string>>();
             var val = Encoding.UTF8.GetString(pair.Value);
 
+            var isJson = false;
             if (!string.IsNullOrWhiteSpace(val))
             {
                 if((val[0] == '{' && val[val.Length - 1] == '}')|| (val[0] == '[' && val[val.Length - 1] == ']'))
@@ -83,9 +84,16 @@ namespace Cobweb.Consul.Configuration
                             if(ConvertToConfigurationKey(_parent.Root, item.path, out string key))
                                 dic.Add(new KeyValuePair<string, string>(key, GetTokenString(item.token)));
                         }
+                        isJson = true;
                     }
                     catch(Exception ex) { }
                 }
+            }
+
+            if (!isJson)
+            {
+                if (ConvertToConfigurationKey(_parent.Root, pair.Key, out string key))
+                    dic.Add(new KeyValuePair<string, string>(key, val));
             }
 
             return dic;

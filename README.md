@@ -93,15 +93,42 @@ Console.WriteLine("返回:{0}", string.Join(", ", strs));
 > todo
 
 ### 统一配置 
-引用Cobweb.Consul.Configuration项目，基于consul kv统一分发配置。兼容asp.net core 原生`IConfiguration`方式，如：
+引用Cobweb.Consul.Configuration项目，基于consul kv统一分发配置。兼容asp.net core 原生`IConfiguration`方式，该库可单独使用。使用方式如下：
 ```C#
 builder.ConfigureAppConfiguration(b=> {
-    b.AddJsonFile("appsettings.json");
+    b.AddJsonFile("appsettings.json");//添加本地json默认配置(可选)
     b.AddConsul(consul => {
         consul.Address = new Uri("http://localhost:8500");
     });
 })
 ```
+
+对应的consul kv值配置如下(string与json混用)：
+```
+    //CobwebConfiguration/current/db="value"
+    //CobwebConfiguration/current/auth={token:3, expired:"01:00:00"}
+
+```
+
+以上kv对应的等效json如下：
+``` json
+{
+  "current": {
+    "db": "value",
+    "auth": { "token": 1 }
+  }
+}
+```
+
+1. 使用Configuration方式  
+```C#
+    var setting = new Settings();
+    config.GetSection("current");//config:IConfiguration
+    config.Bind("current", setting);
+```
+
+2. 使用Options方式  
+在`StartUp`中使用`services.Configure<Settings>(config.GetSection("current"))`进行配置后，就可以将`IOptions<Settings>`/`IOptionsMonitor<Settings>`等注入到需要使用的地方
 
 
 ### 统一日志

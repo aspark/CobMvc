@@ -26,15 +26,13 @@ namespace Cobweb.ClientDemo
             });
 
             var configBuilder = new ConfigurationBuilder();
-            configBuilder.AddJsonFile("appsettings.json");
+            configBuilder.AddJsonFile("appsettings.json");//add json file for default value
             configBuilder.AddConsul(c => c.Address = new Uri("http://localhost:8500"));
             var config = configBuilder.Build();
 
-            //config.Bind()
-
-            var setting = new Settings();
-            config.GetSection("current");
-            config.Bind("current", setting);
+            //var setting = new Settings();
+            //config.GetSection("current");
+            //config.Bind("current", setting);
 
             services.AddSingleton<IConfiguration>(config);
 
@@ -57,8 +55,8 @@ namespace Cobweb.ClientDemo
         public Business(IServiceProvider serviceProvider, IOptionsMonitor<Settings> settings)
         {
             _settings = settings;
-            Console.WriteLine("current Token:" + settings.CurrentValue?.auth?.Token);
-            _settings.OnChange((s, n) => Console.WriteLine("new Token:" + s?.auth?.Token));
+            Console.WriteLine("current settings:" + JsonConvert.SerializeObject(settings.CurrentValue));
+            _settings.OnChange((s, n) => Console.WriteLine("new settings:" + JsonConvert.SerializeObject(s)));
             _serviceProvider = serviceProvider;
         }
 
@@ -116,7 +114,9 @@ namespace Cobweb.ClientDemo
         }
     }
 
-    //{"db":"value","auth":{"token":2}}
+    //consul kv values(string or json):
+    //root/current/db="value"
+    //root/current/auth={token:3, expired:"01:00:00"}
     public class Settings
     {
         public string DB { get; set; }
@@ -127,5 +127,8 @@ namespace Cobweb.ClientDemo
     public class Auth
     {
         public string Token { get; set; }
+
+
+        public TimeSpan Expired { get; set; }
     }
 }
