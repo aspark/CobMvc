@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>aspark</Authors>
+    <Description>a simple microservice framework base on asp.net core mvc</Description>
+    <Copyright>MIT</Copyright>
+    <PackageProjectUrl>https://github.com/aspark/Cobweb</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aspark/Cobweb</RepositoryUrl>
+    <PackageTags>microservice asp.net core mvc</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>0.0.1-alpha</Version>
+    <PackageId>CobMvc.Client</PackageId>
+    <Product>CobMvc.Client</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Castle.Core" Version="4.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CobMvc.Core\CobMvc.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>aspark</Authors>
+    <Company>aspark</Company>
+    <Description>asp.net core configuration use consul kv. support string or json value</Description>
+    <PackageProjectUrl>https://github.com/aspark/Cobweb</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aspark/Cobweb</RepositoryUrl>
+    <PackageTags>consul kv .net core configuration</PackageTags>
+    <Version>0.0.1-alpha</Version>
+    <PackageId>CobMvc.Consul.Configuration</PackageId>
+    <Product>CobMvc.Consul.Configuration</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Consul" Version="0.7.2.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.1.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+  </ItemGroup>
+
+</Project>
