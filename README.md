@@ -1,8 +1,8 @@
 # CobMvc
 
-原本打算采用[Orleans](https://github.com/dotnet/orleans)分布式框架的作为业务开发的基础的，但其Consul支持方式太过简单粗暴，也没有实现Consul主动的健康检查机制，首先自己尝试重写了Consul实现，并加入Service注册和健康检查机制，但奈何Orleans的TableMembership太过复杂，一直无法达到理想效果，最终只能放弃。后来将目光转移到[Surging](https://github.com/dotnetcore/surging)微服务框架，这是一个非常优秀的框架，只是自己不太喜欢侵入性太高的方式，所以~~Cobweb~~(Cobweb在nuget被占用，所以改为CobMvc了)诞生了。
+原本打算采用[Orleans](https://github.com/dotnet/orleans)分布式框架的作为业务开发的基础的，但其Consul支持方式太过简单粗暴，也没有实现Consul主动的健康检查机制，首先自己尝试重写了Consul实现，并加入Service注册和健康检查机制，但奈何Orleans的TableMembership太过复杂，一直无法达到理想效果，最终只能放弃。后来将目光转移到[Surging](https://github.com/dotnetcore/surging)微服务框架，这是一个非常优秀的框架，只是自己不太喜欢侵入性太高的方式，所以CobMvc诞生了。
 
-CobMvc基于asp..net core mvc开发，定位为一款简单、低侵入性的微服务框架。至于名称的由来是因为联想到微服务调用链想蜘蛛网一样，然后[iciba](http://www.iciba.com/)给出了这个单词～
+CobMvc基于asp..net core mvc开发，定位为一款简单、低侵入性的微服务框架。至于名称的由来是因为联想到微服务调用链想蜘蛛网一样，然后[iciba](http://www.iciba.com/)给出了这个单词~~Cobweb~~(在nuget被占用，所以改为CobMvc了)～
 
 > **注意：当前框架还处理快速迭代中，部分功能不稳定**
 
