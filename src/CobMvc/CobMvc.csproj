@@ -10,8 +10,8 @@
     <Authors>aspark</Authors>
     <Company>aspark</Company>
     <PackageId>CobMvc</PackageId>
-    <PackageProjectUrl>https://github.com/aspark/Cobweb</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/aspark/Cobweb</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/aspark/CobMvc</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
     <PackageTags>microservice asp.net core mvc</PackageTags>
     <Version>0.0.1-alpha</Version>
     <Product>CobMvc</Product>

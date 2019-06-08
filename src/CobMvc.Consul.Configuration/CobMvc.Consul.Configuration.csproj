@@ -6,8 +6,8 @@
     <Authors>aspark</Authors>
     <Company>aspark</Company>
     <Description>asp.net core configuration use consul kv. support string or json value</Description>
-    <PackageProjectUrl>https://github.com/aspark/Cobweb</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/aspark/Cobweb</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/aspark/CobMvc</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
     <PackageTags>consul kv .net core configuration</PackageTags>
     <Version>0.0.1-alpha</Version>
     <PackageId>CobMvc.Consul.Configuration</PackageId>

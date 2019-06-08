@@ -6,8 +6,8 @@
     <Company>aspark</Company>
     <Authors>aspark</Authors>
     <Description>a simple microservice framework base on asp.net core mvc, use consul as service discover</Description>
-    <PackageProjectUrl>https://github.com/aspark/Cobweb</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/aspark/Cobweb</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/aspark/CobMvc</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
     <Copyright>MIT</Copyright>
     <PackageTags>microservice asp.net core mvc</PackageTags>
     <Version>0.0.1-alpha</Version>

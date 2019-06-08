@@ -6,8 +6,8 @@
     <Authors>aspark</Authors>
     <Description>a simple microservice framework base on asp.net core mvc</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://github.com/aspark/Cobweb</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/aspark/Cobweb</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/aspark/CobMvc</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
     <PackageTags>microservice asp.net core mvc</PackageTags>
     <Copyright>MIT</Copyright>
     <Version>0.0.1-alpha</Version>
