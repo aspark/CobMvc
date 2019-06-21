@@ -73,7 +73,7 @@ namespace CobMvc.WebSockets
                             body = await sr.ReadToEndAsync();
                         }
 
-                        if (context.Response.StatusCode == 200)
+                        if (context.Response.StatusCode == 0)//todo:200
                         {
                             var res = new JsonRpcResponse() { ID = msg.ID, Result = JsonConvert.DeserializeObject(body) };
                             foreach (var header in context.Response.Headers)
@@ -151,9 +151,9 @@ namespace CobMvc.WebSockets
                 throw new NotImplementedException();
             }
 
-            public override void OnStarting(Func<object, Task> callback, object state)
+            public override async void OnStarting(Func<object, Task> callback, object state)
             {
-                
+                await callback(state);
             }
 
             public override void Redirect(string location, bool permanent)

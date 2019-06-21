@@ -13,7 +13,7 @@ namespace CobMvc.WebSockets
         [JsonProperty("jsonrpc")]
         public string JsonRpc { get; set; } = "2.0";
 
-        [JsonProperty("params")]
+        [JsonProperty("props")]
         public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
     }
 
