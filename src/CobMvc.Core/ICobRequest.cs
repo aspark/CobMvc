@@ -14,6 +14,9 @@ namespace CobMvc.Core
 
     public class CobRequestContext
     {
+        /// <summary>
+        /// 调用路径（暂无Query）
+        /// </summary>
         public string Url { get; set; }
 
         public Dictionary<string, object> Parameters { get; set; }
@@ -39,7 +42,12 @@ namespace CobMvc.Core
 
     public abstract class CobRequestBase : ICobRequest
     {
-        public abstract object DoRequest(CobRequestContext context, object state);
+        public object DoRequest(CobRequestContext context, object state)
+        {
+            return MatchReturnType(context.ReturnType, realType => DoRequest(context, realType, state));
+        }
+
+        protected abstract Task<object> DoRequest(CobRequestContext context, Type realType, object state);
 
 
         internal protected object MatchReturnType(Type returnType, Func<Type, Task<object>> converter)
@@ -73,7 +81,7 @@ namespace CobMvc.Core
             }
             else if (realReturnType != null)
             {
-                return converter(realReturnType).Result;
+                return converter(realReturnType).ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
             return null;
@@ -89,5 +97,7 @@ namespace CobMvc.Core
 
             return gt.GetProperty(nameof(TaskCompletionSource<int>.Task)).GetValue(tcs) as Task;
         }
+
+        //protected abstract Task<object> Get(Type realType);
     }
 }

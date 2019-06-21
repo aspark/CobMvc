@@ -20,7 +20,7 @@ namespace CobMvc.ClientDemo
             var services = new ServiceCollection();
 
             services.AddCobMvc(cob => {
-                cob.UseConsul(opt => {
+                cob.AddConsul(opt => {
                     opt.Address = new Uri("http://localhost:8500");
                 });
             });
@@ -65,7 +65,7 @@ namespace CobMvc.ClientDemo
             var services = new ServiceCollection();
 
             services.AddCobMvc(cob => {
-                cob.UseConsul(opt => {
+                cob.AddConsul(opt => {
                     opt.Address = new Uri("http://localhost:8500");
                 });
             });

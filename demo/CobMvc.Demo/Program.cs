@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using CobMvc.Consul.Configuration;
+using System.Net;
 
 namespace CobMvc.Demo
 {
@@ -27,7 +28,7 @@ namespace CobMvc.Demo
 
             var builder = new WebHostBuilder();
             builder
-            .ConfigureAppConfiguration(b=> {
+            .ConfigureAppConfiguration(b => {
                 b.AddJsonFile("appsettings.json");//add default settings
                 b.AddConsul(consul => {
                     consul.Address = new Uri("http://localhost:8500");
@@ -41,11 +42,13 @@ namespace CobMvc.Demo
                 log.ClearProviders();
                 log.AddConsole();
                 log.SetMinimumLevel(LogLevel.Trace);
-                log.AddFilter((n, l)=>!n.StartsWith("Microsoft."));
+                log.AddFilter((n, l) => !n.StartsWith("Microsoft."));
             })
             .UseKestrel()
+            .UseSockets()
             .UseContentRoot(Directory.GetCurrentDirectory())
-            .UseUrls($"http://localhost:{NetHelper.GetAvailablePort()}")
+            //.UseUrls($"http://localhost:{NetHelper.GetAvailablePort()}")
+            .UseUrls("http://localhost:54469")
             .UseStartup<Startup>();
             
             return builder;

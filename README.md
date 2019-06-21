@@ -25,7 +25,7 @@ services.AddMvc()
                 //opt.ServiceAddress = "http://localhost:54469";//若为IIS，需要配置地址，否则CobMvc会自动从WebHost中获取
                 opt.HealthCheck = "/api/test/Health";//不配置时，不做健康检查
             });
-            cob.UseConsul(opt=> {//若不使用Consul，则默认使用InMemory方式
+            cob.AddConsul(opt=> {//若不使用Consul，则默认使用InMemory方式
                 opt.Address = new Uri("http://localhost:8500");
             });
         });
@@ -52,7 +52,7 @@ console需要自行构造`ServiceCollection`来启用`DI`，然后像mvc中一�
 var services = new ServiceCollection();
 
 services.AddCobMvc(cob => {
-    cob.UseConsul(opt => {
+    cob.AddConsul(opt => {
         opt.Address = new Uri("http://localhost:8500");
     });
 });

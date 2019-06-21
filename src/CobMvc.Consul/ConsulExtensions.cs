@@ -8,13 +8,15 @@ namespace CobMvc.Consul
 {
     public static class ConsulExtensions
     {
-        public static void UseConsul(this ICobMvc web, Action<ConsulClientConfiguration> option)
+        public static ICobMvc AddConsul(this ICobMvc web, Action<ConsulClientConfiguration> option)
         {
             web.ConfigureServices(services =>
             {
                 services.AddSingleton<IServiceRegistration, ConsulServiceRegistration>(p => new ConsulServiceRegistration(option));
                 //services.AddSingleton<ICobConfiguration, ConsulConfiguration>();
             });
+
+            return web;
         }
 
         //public static void AddConsul(this IConfigurationBuilder builder)

@@ -11,6 +11,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CobMvc;
 using CobMvc.Consul;
+using System.Text;
+using System.Threading;
+using CobMvc.WebSockets;
 
 namespace CobMvc.Demo
 {
@@ -32,11 +35,12 @@ namespace CobMvc.Demo
                     cob.ConfigureOptions(opt=> {
                         opt.ServiceName = "CobMvcDemo";
                         //opt.ServiceAddress = "http://localhost:54469";//改为console随机端口
-                        opt.HealthCheck = "/api/test/Health";
+                        //opt.HealthCheck = "/api/test/Health";
                     });
-                    cob.UseConsul(opt=> {
+                    cob.AddConsul(opt=> {
                         opt.Address = new Uri("http://localhost:8500");
                     });
+                    cob.AddCobWebSockets();
                 });
 
             //services.AddCobMvc();
@@ -50,7 +54,13 @@ namespace CobMvc.Demo
                 app.UseDeveloperExceptionPage();
             }
 
+            //WebHostBuilderSocketExtensions.UseSockets
+
+
             app.UseCobMvc();
+            //app.UseWebSockets();
+            app.UseCobWebSockets();
+
             app.UseMvc();
         }
     }

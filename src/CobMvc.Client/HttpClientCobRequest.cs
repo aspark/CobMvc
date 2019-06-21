@@ -27,34 +27,34 @@ namespace CobMvc.Client
 
         //支持HttpMethod, 
         //todo:HttpPost FromBodyAttribute需要添加mvc core 引用？
-        public override object DoRequest(CobRequestContext context, object state)
+        protected override Task<object> DoRequest(CobRequestContext context, Type realType, object state)
         {
             if (context is TypedCobRequestContext)
-                return Invoke(context as TypedCobRequestContext);
+                return Invoke(context as TypedCobRequestContext, realType);
 
             if(state != null && !(state is HttpClientCobRequestOptions))
             {
                 throw new ArgumentException("state should be HttpClientCobRequestOptions");
             }
 
-            return Invoke(context, state as HttpClientCobRequestOptions);
+            return Invoke(context, realType, state as HttpClientCobRequestOptions);
         }
 
-        private object Invoke(CobRequestContext context, HttpClientCobRequestOptions options)
+        private Task<object> Invoke(CobRequestContext context, Type realType, HttpClientCobRequestOptions options)
         {
             options = options ?? new HttpClientCobRequestOptions();
 
-            return Invoke(context, options.Method);
+            return Invoke(context, realType, options.Method);
         }
 
-        private object Invoke(TypedCobRequestContext context)
+        private Task<object> Invoke(TypedCobRequestContext context, Type realType)
         {
             var usePost = context.Method.GetParameters().Any(p => p.ParameterType.IsClass && p.ParameterType != typeof(string));
 
-            return Invoke(context, usePost ? HttpMethod.Post : HttpMethod.Get);
+            return Invoke(context, realType, usePost ? HttpMethod.Post : HttpMethod.Get);
         }
 
-        private object Invoke(CobRequestContext context, HttpMethod method)
+        private async Task<object> Invoke(CobRequestContext context, Type realType, HttpMethod method)
         {
             method = method ?? HttpMethod.Get;
 
@@ -90,23 +90,15 @@ namespace CobMvc.Client
             msg.Headers.Add(CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString());
             _logger?.LogDebug("set http request traceID:{0}", _contextAccessor.Current.TraceID);
 
-            var responseTask = _client.SendAsync(msg);
+            var response = await _client.SendAsync(msg);
 
-            return base.MatchReturnType(context.ReturnType, realType=> {
-                var tcs = new TaskCompletionSource<object>();
-                responseTask.ContinueWith(r =>
-                {
-                    r.Result.EnsureSuccessStatusCode();//抛出异常
+            response.EnsureSuccessStatusCode();//抛出异常
 
-                    r.Result.Content.ReadAsStringAsync().ContinueWith(c =>
-                    {
-                        var value = JsonConvert.DeserializeObject(c.Result, realType);
-                        tcs.TrySetResult(value);
-                    });
-                });
+            var content = await response.Content.ReadAsStringAsync();
 
-                return tcs.Task;
-            });
+            var value = JsonConvert.DeserializeObject(content, realType);
+
+            return value;
         }
     }
 

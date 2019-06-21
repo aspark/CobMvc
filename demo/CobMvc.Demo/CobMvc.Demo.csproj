@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\CobMvc.Consul.Configuration\CobMvc.Consul.Configuration.csproj" />
     <ProjectReference Include="..\..\src\CobMvc.Consul\CobMvc.Consul.csproj" />
+    <ProjectReference Include="..\..\src\CobMvc.WebSockets\CobMvc.WebSockets.csproj" />
     <ProjectReference Include="..\..\src\CobMvc\CobMvc.csproj" />
     <ProjectReference Include="..\CobMvc.Demo.Contract\CobMvc.Demo.Contract.csproj" />
   </ItemGroup>

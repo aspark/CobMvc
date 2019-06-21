@@ -19,7 +19,7 @@ namespace CobMvc
     public static class CobMvcExtensions
     {
         /// <summary>
-        /// 添加cobmvc相关服务
+        /// 添加cobmvc服务发现、调用等相关服务
         /// </summary>
         public static IMvcBuilder AddCobMvc(this IMvcBuilder mvcBuilder, Action<ICobMvc> setup)
         {
@@ -50,7 +50,7 @@ namespace CobMvc
         //}
 
         /// <summary>
-        /// 启用cobmvc，放置在UseMvc()之前
+        /// 启用cobmvc服务注册，放置在UseMvc()之前
         /// </summary>
         /// <param name="mvcBuilder"></param>
         /// <returns></returns>
