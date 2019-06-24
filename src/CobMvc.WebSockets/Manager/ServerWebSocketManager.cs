@@ -30,7 +30,6 @@ namespace CobMvc.WebSockets
         {
             _loggerFactory = loggerFactory;
             _context = context;
-            Init();
         }
 
         protected override Task<WebSocket> GetWebSocket()
@@ -44,7 +43,7 @@ namespace CobMvc.WebSockets
             {
                 if (string.Equals(msg.Method, JsonRpcMessages.PingRequest.Method, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    await base.Send(JsonRpcMessages.PongResponse);
+                    await base.Send(JsonRpcMessages.GetPongResponse(msg.ID));
                     return;
                 }
 
@@ -52,10 +51,10 @@ namespace CobMvc.WebSockets
 
                 try
                 {
-                    var route = CobWebSocketContextBag.ConfigRouteData.Routers.OfType<IRouteCollection>().First();
+                    var route = CobWebSocketContextBridge.ConfigRouteData.Routers.OfType<IRouteCollection>().First();
 
                     //var context = _context.RequestServices.GetRequiredService<IHttpContextFactory>().Create(_context.Features);
-                    var context = new FakeHttpContext(_context.Features) { RequestServices = _context.RequestServices };
+                    var context = new FakeHttpContext() { RequestServices = _context.RequestServices };//_context.Features
                     context.Request.Path = msg.Method;
                     context.Request.Method = "Get";
 
@@ -113,6 +112,11 @@ namespace CobMvc.WebSockets
         private class FakeHttpContext : DefaultHttpContext
         {
             private HttpResponse _response = null;
+
+            public FakeHttpContext()
+            {
+                _response = new FakeHttpResponse(this);
+            }
 
             public FakeHttpContext(IFeatureCollection features) :base(features)
             {
@@ -183,6 +187,7 @@ namespace CobMvc.WebSockets
 
             var item = new ServerWebSocketManager(_loggerFactory, context);
             item.OnDispose += Item_OnDispose;
+            item.Start();
             _items.TryAdd(item, true);
 
             return item;

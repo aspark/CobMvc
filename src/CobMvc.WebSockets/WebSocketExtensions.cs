@@ -41,7 +41,7 @@ namespace CobMvc.WebSockets
             app.Use(async (ctx, next) => {
                 if(ctx.WebSockets.IsWebSocketRequest)
                 {
-                    CobWebSocketContextBag.FakeController(ctx, next);
+                    CobWebSocketContextBridge.Mount(ctx, next);
 
                     app.ApplicationServices.GetRequiredService<ServerWebSocketPool>().Enqueue(ctx).Wait();
 
@@ -55,38 +55,31 @@ namespace CobMvc.WebSockets
         }
     }
 
-    public class CobWebSocketContextBag : ControllerBase
+    public class CobWebSocketContextBridge : ControllerBase
     {
-        internal const string EntryUrl = "/cobweb/8FBF718E9D8B41ED8686A604CDF4B833.socket";
+        internal const string EntryUrl = "/cobweb/socket/8FBF718E9D8B41ED8686A604CDF4B833";
 
         public static RouteData ConfigRouteData { get; private set; }
 
-        private static object _objHasFake = new object();
-        private static bool _hasFake = false;
-        public static void FakeController(HttpContext ctx, Func<Task> next)
+        private static int _hasFake = 0;
+        public static void Mount(HttpContext ctx, Func<Task> next)
         {
-            if (_hasFake)
+            if (Interlocked.CompareExchange(ref _hasFake, 1, 0) == 1)
                 return;
-            
-            lock (_objHasFake)
-            {
-                if (_hasFake)
-                    return;
 
-                ctx.Request.Path = CobWebSocketContextBag.EntryUrl;
-                ctx.Request.Method = "Get";
-                next().Wait();//fetch controller route
-                ctx.Response.Clear();
-
-                _hasFake = true;
-            }
+            ctx.Request.Path = CobWebSocketContextBridge.EntryUrl;
+            ctx.Request.Method = "Get";
+            next().Wait();//fetch controller route
+            ctx.Response.Clear();
         }
 
         [Route(EntryUrl)]
-        public void Get()
+        public ActionResult Get()
         {
             if(ConfigRouteData == null)
                 ConfigRouteData = RouteData;
+
+            return NotFound();
         }
     }
 }

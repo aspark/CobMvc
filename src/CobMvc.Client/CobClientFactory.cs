@@ -101,7 +101,7 @@ namespace CobMvc.Client
             _logger.LogError("can not get available service for:{0}", _desc.ServiceName);
 
             //todo:无服务可用，降级？
-            throw new Exception("failover");
+            throw new Exception("service select failover");
         }
     }
 

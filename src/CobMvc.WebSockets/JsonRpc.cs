@@ -51,9 +51,9 @@ namespace CobMvc.WebSockets
 
     internal static class JsonRpcMessages
     {
-        public static JsonRpcRequest PingRequest = new JsonRpcRequest() { ID = Guid.Empty, Method = "rpc.ping" };
+        public static JsonRpcRequest PingRequest = new JsonRpcRequest() { Method = "rpc.ping" };
 
-        public static JsonRpcResponse PongResponse = new JsonRpcResponse() { ID = PingRequest.ID, Result = "rpc.ping" };
+        public static JsonRpcResponse GetPongResponse(Guid id) => new JsonRpcResponse() { ID = id, Result = "rpc.pong" };
 
         public static JsonRpcResponse CreateError(string msg)
         {

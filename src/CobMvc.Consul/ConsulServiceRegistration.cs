@@ -71,7 +71,7 @@ namespace CobMvc.Consul
                             ID = svc.ServiceID,
                             Name = svc.ServiceName,
                             Port = svc.ServicePort,
-                            Status = status.ContainsKey(svc.ServiceID) ? IndicateStatus(status[svc.ServiceID]) : ServiceInfoStatus.Critical
+                            Status = status.ContainsKey(svc.ServiceID) ? IndicateStatus(status[svc.ServiceID]) : ServiceInfoStatus.Healthy//没有健康检查时，默认为健康
                         });
                     }
                 }

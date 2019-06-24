@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using CobMvc.WebSockets;
 
 namespace CobMvc.ClientDemo
 {
@@ -22,7 +23,7 @@ namespace CobMvc.ClientDemo
             services.AddCobMvc(cob => {
                 cob.AddConsul(opt => {
                     opt.Address = new Uri("http://localhost:8500");
-                });
+                }).AddCobWebSockets();
             });
 
             var configBuilder = new ConfigurationBuilder();

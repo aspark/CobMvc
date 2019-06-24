@@ -22,25 +22,38 @@ namespace CobMvc.WebSockets
         {
             _loggerFactory = loggerFactory;
             _url = url;
-            Init();
+
+            //纠正websocket地址
+            if (!string.Equals(_url.Scheme, "ws", StringComparison.InvariantCultureIgnoreCase) || !string.Equals(_url.Scheme, "wss", StringComparison.InvariantCultureIgnoreCase))
+            {
+                var ub = new UriBuilder(_url);
+                if (string.Equals(_url.Scheme, "wss", StringComparison.InvariantCultureIgnoreCase))
+                    ub.Scheme = "wss";
+                else
+                    ub.Scheme = "ws";
+
+                _url = ub.Uri;
+            }
         }
 
         public int ID { get; set; }
 
-        protected override void Init()
+        public override void Start()
         {
-            base.Init();
+            base.Start();
 
             Task.Factory.StartNew(KeepAlive, base.Cancellation, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         private void KeepAlive()
         {
-            Task.Delay(10000, base.Cancellation).ContinueWith(t => {
+#if !DEBUG
+            Task.Delay(30000, base.Cancellation).ContinueWith(t => {
                 base.Send(JsonRpcMessages.PingRequest).ConfigureAwait(false).GetAwaiter().GetResult();
 
                 KeepAlive();
             });
+#endif
         }
 
         protected override async Task<WebSocket> GetWebSocket()
@@ -51,12 +64,12 @@ namespace CobMvc.WebSockets
             return socket;
         }
 
-        ConcurrentDictionary<Guid, TaskCompletionSource<JsonRpcResponse>> _sendList = new ConcurrentDictionary<Guid, TaskCompletionSource<JsonRpcResponse>>();
-        public new Task<JsonRpcResponse> Send(JsonRpcRequest response)
+        ConcurrentDictionary<Guid, TaskCompletionSource<JsonRpcResponse>> _requestList = new ConcurrentDictionary<Guid, TaskCompletionSource<JsonRpcResponse>>();
+        public new Task<JsonRpcResponse> Send(JsonRpcRequest request)
         {
             var tcs = new TaskCompletionSource<JsonRpcResponse>();
-            _sendList.TryAdd(response.ID, tcs);
-            base.Send(response);
+            _requestList.TryAdd(request.ID, tcs);
+            base.Send(request);
 
             return tcs.Task;
         }
@@ -64,12 +77,23 @@ namespace CobMvc.WebSockets
         protected override Task OnReceiveMessage(JsonRpcResponse msg)
         {
             //设置完成
-            if (_sendList.TryGetValue(msg.ID, out TaskCompletionSource<JsonRpcResponse> item))
+            if (_requestList.TryGetValue(msg.ID, out TaskCompletionSource<JsonRpcResponse> item))
             {
                 item.TrySetResult(msg);
+                _requestList.TryRemove(msg.ID, out _);//remove completed
             }
 
             return Task.CompletedTask;
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+        }
+
+        public override string ToString()
+        {
+            return $"send request:{_requestList.Count} {base.ToString()}";
         }
     }
 
@@ -94,12 +118,22 @@ namespace CobMvc.WebSockets
 
             _logger.LogDebug($"get or add socket client:{key}");
 
-            return _items.GetOrAdd(key, k => {
-                var item = new ClientWebSocketManager(_loggerFactory, uri) { ID = k };
-                item.OnDispose += Item_OnDispose;
+            ClientWebSocketManager client = null;
+            while (true)
+            {
+                client = _items.GetOrAdd(key, k => {
+                    var item = new ClientWebSocketManager(_loggerFactory, uri) { ID = k };
+                    item.OnDispose += Item_OnDispose;
+                    item.Start();
 
-                return item;
-            });
+                    return item;
+                });
+
+                if (!client.IsDisposing)
+                    break;
+            }
+
+            return client;
         }
 
         private void Item_OnDispose(object sender, EventArgs e)

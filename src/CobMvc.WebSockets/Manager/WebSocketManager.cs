@@ -28,16 +28,22 @@ namespace CobMvc.WebSockets
             _logger = loggerFactory.CreateLogger<WebSocketWrapper<TRec, TSend>>();
         }
 
+        private int _hasStart = 0;
         private Task _waitHandle = null;
-        protected virtual void Init()
+        public virtual void Start()
         {
+            if (Interlocked.CompareExchange(ref _hasStart, 1, 0) == 1)
+                return;
+
             var socket = HandleSocket();
 
             var messages = Task.Factory.StartNew(HandleMessages, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
             var send = Task.Factory.StartNew(SendResponse, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-            _waitHandle = socket.ContinueWith(t=>Dispose());
+            _waitHandle = socket.ContinueWith(t=> {
+                Dispose();
+            });
         }
 
         protected abstract Task<WebSocket> GetWebSocket();
@@ -52,7 +58,7 @@ namespace CobMvc.WebSockets
         private WebSocket _websocket = null;
         private async Task HandleSocket()
         {
-            _websocket = await GetWebSocket();
+            _websocket = GetWebSocket().ConfigureAwait(false).GetAwaiter().GetResult();
 
             //change to Rx?
             var pipe = new Pipe();
@@ -217,18 +223,18 @@ namespace CobMvc.WebSockets
 
         public event EventHandler OnDispose;
 
-        private bool _isDisposing = false;
-        public void Dispose()
+        public bool IsDisposing { get; private set; } = false;
+        public virtual void Dispose()
         {
-            if (_isDisposing)
+            if (IsDisposing)
                 return;
 
             lock (this)
             {
-                if (_isDisposing)
+                if (IsDisposing)
                     return;
 
-                _isDisposing = true;
+                IsDisposing = true;
             }
 
             _logger.LogDebug("websocket disposed");
@@ -244,13 +250,13 @@ namespace CobMvc.WebSockets
         BlockingCollection<(TaskCompletionSource<bool> Source, TSend Content)> _sendList = new BlockingCollection<(TaskCompletionSource<bool>, TSend)>();
 
         /// <summary>
-        /// 发送回复
+        /// 发送数据
         /// </summary>
         /// <param name="response"></param>
         /// <returns></returns>
         public virtual Task<bool> Send(TSend response)
         {
-            if (response == null)
+            if (response == null || IsDisposing)
                 return Task.FromResult(false);
 
             var tcs = new TaskCompletionSource<bool>();
@@ -288,6 +294,11 @@ namespace CobMvc.WebSockets
                     _logger.LogError(ex, "SendResponse");
                 }
             }
+        }
+
+        public override string ToString()
+        {
+            return $"sending:{_sendList.Count} receiving:{_messages.Count}";
         }
     }
 }

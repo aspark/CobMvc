@@ -21,20 +21,27 @@ namespace CobMvc.WebSockets
         {
             var client = _clientWebSocketPool.GetOrCreate(context.Url);
 
-            var result = await client.Send(new JsonRpcRequest { Method = new Uri(context.Url).AbsolutePath, Params = context.Parameters });
+            var timeout = Task.Delay(TimeSpan.FromSeconds(30));//todo:30s超时可配置
 
-            if (result.Error == null)
+            var send = client.Send(new JsonRpcRequest { Method = new Uri(context.Url).PathAndQuery, Params = context.Parameters });
+
+            if(await Task.WhenAny(timeout, send) == timeout)
             {
-                if (result.Result is JToken)
+                throw new TimeoutException();
+            }
+
+            if (send.Result.Error == null)
+            {
+                if (send.Result.Result is JToken)
                 {
                     //return JsonConvert.PopulateObject()
-                    return (result.Result as JToken).ToObject(context.ReturnType);
+                    return (send.Result.Result as JToken).ToObject(context.ReturnType);
                 }
 
                 return null;
             }
 
-            throw new Exception(result.Error.Message);
+            throw new Exception(send.Result.Error.Message);
         }
     }
 }
