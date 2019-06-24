@@ -27,7 +27,7 @@ namespace CobMvc.WebSockets
 
             if(await Task.WhenAny(timeout, send) == timeout)
             {
-                throw new TimeoutException();
+                throw new TimeoutException(client.ToString());
             }
 
             if (send.Result.Error == null)

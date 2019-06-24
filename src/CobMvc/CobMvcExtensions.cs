@@ -23,6 +23,8 @@ namespace CobMvc
         /// </summary>
         public static IMvcBuilder AddCobMvc(this IMvcBuilder mvcBuilder, Action<ICobMvc> setup)
         {
+            mvcBuilder.Services.AddSingleton(mvcBuilder);
+
             var container = new DefaultCobMvc(mvcBuilder.Services);
 
             setup?.Invoke(container);

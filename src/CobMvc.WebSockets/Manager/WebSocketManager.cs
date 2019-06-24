@@ -50,7 +50,7 @@ namespace CobMvc.WebSockets
 
         public void Wait()
         {
-            _waitHandle.Wait();
+            _waitHandle.ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         protected CancellationToken Cancellation { get => _cts.Token; }

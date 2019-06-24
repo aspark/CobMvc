@@ -31,7 +31,7 @@ namespace CobMvc.Demo
         {
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                .AddCobMvc(cob=> {
+                .AddCobMvc(cob => {
                     cob.ConfigureOptions(opt=> {
                         opt.ServiceName = "CobMvcDemo";
                         //opt.ServiceAddress = "http://localhost:54469";//改为console随机端口
@@ -54,11 +54,7 @@ namespace CobMvc.Demo
                 app.UseDeveloperExceptionPage();
             }
 
-            //WebHostBuilderSocketExtensions.UseSockets
-
-
             app.UseCobMvc();
-            //app.UseWebSockets();
             app.UseCobWebSockets();
 
             app.UseMvc();

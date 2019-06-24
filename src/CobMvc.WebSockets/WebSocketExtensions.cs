@@ -17,6 +17,11 @@ namespace CobMvc.WebSockets
 {
     public static class WebSocketExtensions
     {
+        /// <summary>
+        /// 添加WebSockets支持
+        /// </summary>
+        /// <param name="web"></param>
+        /// <returns></returns>
         public static ICobMvc AddCobWebSockets(this ICobMvc web)
         {
             web.ConfigureServices(services => {
@@ -28,13 +33,24 @@ namespace CobMvc.WebSockets
             return web;
         }
 
+        /// <summary>
+        /// 启用Websockets
+        /// </summary>
+        /// <param name="app"></param>
         public static void UseCobWebSockets(this IApplicationBuilder app)
         {
             app.UseCobWebSockets(null);
         }
 
+        /// <summary>
+        /// 启用Websockets
+        /// </summary>
+        /// <param name="app"></param>
+        /// <param name="options"></param>
         public static void UseCobWebSockets(this IApplicationBuilder app, WebSocketOptions options)
         {
+            //app.ApplicationServices.GetRequiredService<IMvcBuilder>().AddApplicationPart(typeof(WebSocketExtensions).Assembly).AddControllersAsServices();
+
             if (options == null)
                 app.UseWebSockets();
             else
@@ -43,7 +59,7 @@ namespace CobMvc.WebSockets
             app.Use(async (ctx, next) => {
                 if(ctx.WebSockets.IsWebSocketRequest)
                 {
-                    CobWebSocketContextBridge.Mount(ctx, next);
+                    CobWebSocket2HttpContextBridge.Mount(ctx, next);
 
                     app.ApplicationServices.GetRequiredService<ServerWebSocketPool>().Enqueue(ctx).Wait();
 
@@ -57,7 +73,10 @@ namespace CobMvc.WebSockets
         }
     }
 
-    public class CobWebSocketContextBridge : ControllerBase
+    /// <summary>
+    /// HttpContext执行环境
+    /// </summary>
+    public class CobWebSocket2HttpContextBridge : ControllerBase
     {
         internal const string EntryUrl = "/cobweb/socket/8FBF718E9D8B41ED8686A604CDF4B833";
 
@@ -70,11 +89,12 @@ namespace CobMvc.WebSockets
             if (Interlocked.CompareExchange(ref _hasFake, 1, 0) == 1)
             {
                 MakeUpHttpContext(ctx);
+                return;
             }
 
-            ctx.Request.Path = CobWebSocketContextBridge.EntryUrl;
+            ctx.Request.Path = CobWebSocket2HttpContextBridge.EntryUrl;
             ctx.Request.Method = "Get";
-            next().Wait();//fetch controller route
+            next().ConfigureAwait(false).GetAwaiter().GetResult();//fetch controller route
             ctx.Response.Clear();
         }
 
@@ -90,6 +110,11 @@ namespace CobMvc.WebSockets
             return NotFound();
         }
 
+        /// <summary>
+        /// 补充httpcontext内的上下文
+        /// </summary>
+        /// <param name="entryContext"></param>
+        /// <returns></returns>
         private static HttpContext MakeUpHttpContext(HttpContext entryContext)
         {
             //add features
@@ -101,33 +126,38 @@ namespace CobMvc.WebSockets
             return entryContext;
         }
 
+        /// <summary>
+        /// 构造httpcontext
+        /// </summary>
+        /// <param name="entryContext"></param>
+        /// <returns></returns>
         public static HttpContext CreateHttpContext(HttpContext entryContext)
         {
             //MakeUpHttpContext(entryContext);
 
-            return new FakeHttpContext(entryContext.Features) { RequestServices = entryContext.RequestServices };
+            return new InMemoryHttpContext(entryContext.Features) { RequestServices = entryContext.RequestServices };
         }
 
-        private class FakeHttpContext : DefaultHttpContext
+        private class InMemoryHttpContext : DefaultHttpContext
         {
             private HttpResponse _response = null;
 
-            public FakeHttpContext()
+            public InMemoryHttpContext()
             {
-                _response = new FakeHttpResponse(this);
+                _response = new InMemoryHttpResponse(this);
             }
 
-            public FakeHttpContext(IFeatureCollection features) : base(features)
+            public InMemoryHttpContext(IFeatureCollection features) : base(features)
             {
-                _response = new FakeHttpResponse(this);
+                _response = new InMemoryHttpResponse(this);
             }
 
             public override HttpResponse Response => _response;
         }
 
-        private class FakeHttpResponse : HttpResponse
+        private class InMemoryHttpResponse : HttpResponse
         {
-            public FakeHttpResponse(HttpContext context)
+            public InMemoryHttpResponse(HttpContext context)
             {
                 _context = context;
                 Body = new MemoryStream();

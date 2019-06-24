@@ -14,5 +14,7 @@ namespace CobMvc.Core
         void Configure<T>(Action<T> options) where T : class;
 
         void ConfigureOptions(Action<CobMvcOptions> options);
+
+
     }
 }

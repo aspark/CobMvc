@@ -51,9 +51,9 @@ namespace CobMvc.WebSockets
 
                 try
                 {
-                    var route = CobWebSocketContextBridge.ConfigRouteData.Routers.OfType<IRouteCollection>().First();
+                    var route = CobWebSocket2HttpContextBridge.ConfigRouteData.Routers.OfType<IRouteCollection>().First();
 
-                    var context = CobWebSocketContextBridge.CreateHttpContext(_context);
+                    var context = CobWebSocket2HttpContextBridge.CreateHttpContext(_context);
                     context.Request.Path = msg.Method;
                     context.Request.Method = "Get";
 

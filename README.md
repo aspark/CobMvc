@@ -16,7 +16,7 @@ PM> Install-Package CobMvc -Version 0.0.1-alpha
 
 #### 注册
 
-添加CobMvc引用后, 在mvc `Startup`类添加MVC组件时`AddCobMvc()`即可
+1. 添加CobMvc引用后, 在mvc `Startup.ConfigureServices(IServiceCollection services)`加MVC组件时一并添用`AddCobMvc()`
 ```C#
 services.AddMvc()
         .AddCobMvc(cob=> {
@@ -31,7 +31,9 @@ services.AddMvc()
         });
 ```
 
-#### MVC调用其它服务
+2. 在`Configure(IApplicationBuilder app, IHostingEnvironment env)`中调用`app.UseCobMvc();`将当前asp.net mvc服务添加到注册中心。如当前项目只须调用其它服务，可不使用该方法
+
+#### 1. 在asp.net mvc内调用其它服务
 将`ICobClientFactory`由构造函数注入后直接调用即可
 ```C#
 public TestController(ICobClientFactory clientFactory)
@@ -45,7 +47,7 @@ public TestController(ICobClientFactory clientFactory)
 }
 ```
 
-#### Console客户端调用
+#### 2. 在Console客户端调用其它服务
 console需要自行构造`ServiceCollection`来启用`DI`，然后像mvc中一样`AddCobMvc()`并进行相关配置即可。
 
 ```C#
@@ -68,7 +70,7 @@ var strs = provider.GetService<ICobClientFactory>().GetProxy<IDemo>().GetNames()
 Console.WriteLine("返回:{0}", string.Join(", ", strs));
 ```
 
-#### 服务接口申明
+#### 采用接口申明服务
 
 为方便各系统调，可使用接口申明服务提供的api明细。该操作非必须，但在同一解决方案/业务内还是建议使用。
 ```C#
@@ -90,14 +92,25 @@ Console.WriteLine("返回:{0}", string.Join(", ", strs));
 
 ---
 
-### Websocket
-> todo
+
+### 使用Websocket
+引用CobMvc.WebSockets项目并添加WebSockets支持：
+```C#
+ services.AddMvc()
+    .AddCobMvc(cob=> {
+        cob.AddCobWebSockets();
+    });
+```
+然后在`Configure(IApplicationBuilder app, IHostingEnvironment env)`中通过`app.UseCobWebSockets();`启用WebSockets
+
+---
 
 ### Protobuf
 > todo
 
+
 ### 统一配置 
-引用CobMvc.Consul.Configuration项目，基于consul kv统一分发配置。兼容asp.net core 原生`IConfiguration`方式，该库可单独使用。使用方式如下：
+引用CobMvc.Consul.Configuration项目，该项目是基于consul kv统一分发配置。兼容asp.net core 原生`IConfiguration`方式，该库可单独使用。使用方式如下：
 ```C#
 builder.ConfigureAppConfiguration(b=> {
     b.AddJsonFile("appsettings.json");//添加本地json默认配置(可选)
@@ -107,10 +120,10 @@ builder.ConfigureAppConfiguration(b=> {
 })
 ```
 
-对应的consul kv值配置如下(string与json混用)：
-```
-    //CobMvc/Configuration/current/db="value"
-    //CobMvc/Configuration/current/auth={token:3, expired:"01:00:00"}
+示例代码对应的consul kv值配置如下(string与json混用)：
+``` 
+    CobMvc/Configuration/current/db="value"
+    CobMvc/Configuration/current/auth={token:3, expired:"01:00:00"}
 
 ```
 
@@ -119,21 +132,22 @@ builder.ConfigureAppConfiguration(b=> {
 {
   "current": {
     "db": "value",
-    "auth": { "token": 1 }
+    "auth": { "token": 3, expired:"01:00:00" }
   }
 }
 ```
 
-1. 使用Configuration方式  
+#### 1. 使用Configuration方式获取配置 
 ```C#
     var setting = new Settings();
-    config.GetSection("current");//config:IConfiguration
+    config.GetSection("current");//config:asp.net mvc中注入的IConfiguration
     config.Bind("current", setting);
 ```
 
-2. 使用Options方式  
+#### 2. 使用Options方式方式获取配置
 在`StartUp`中使用`services.Configure<Settings>(config.GetSection("current"))`进行配置后，就可以将`IOptions<Settings>`/`IOptionsMonitor<Settings>`等注入到需要使用的地方
 
+---
 
 ### 统一日志
 > todo
