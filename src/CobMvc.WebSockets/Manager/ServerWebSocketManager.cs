@@ -53,8 +53,7 @@ namespace CobMvc.WebSockets
                 {
                     var route = CobWebSocketContextBridge.ConfigRouteData.Routers.OfType<IRouteCollection>().First();
 
-                    //var context = _context.RequestServices.GetRequiredService<IHttpContextFactory>().Create(_context.Features);
-                    var context = new FakeHttpContext() { RequestServices = _context.RequestServices };//_context.Features
+                    var context = CobWebSocketContextBridge.CreateHttpContext(_context);
                     context.Request.Path = msg.Method;
                     context.Request.Method = "Get";
 
@@ -107,63 +106,6 @@ namespace CobMvc.WebSockets
             }
 
             base.SendAndForget(JsonRpcMessages.CreateError("msg is empty"));
-        }
-
-        private class FakeHttpContext : DefaultHttpContext
-        {
-            private HttpResponse _response = null;
-
-            public FakeHttpContext()
-            {
-                _response = new FakeHttpResponse(this);
-            }
-
-            public FakeHttpContext(IFeatureCollection features) :base(features)
-            {
-                _response = new FakeHttpResponse(this);
-            }
-
-            public override HttpResponse Response => _response;
-        }
-
-        private class FakeHttpResponse : HttpResponse
-        {
-            public FakeHttpResponse(HttpContext context)
-            {
-                _context = context;
-                Body = new MemoryStream();
-            }
-
-            private HttpContext _context = null;
-            public override HttpContext HttpContext => _context;
-
-            public override int StatusCode { get; set; }
-
-            private HeaderDictionary _header = new HeaderDictionary();
-            public override IHeaderDictionary Headers => _header;
-
-            public override Stream Body { get; set; }
-            public override long? ContentLength { get; set; }
-            public override string ContentType { get; set; }
-
-            public override IResponseCookies Cookies => throw new NotImplementedException();
-
-            public override bool HasStarted => false;
-
-            public override void OnCompleted(Func<object, Task> callback, object state)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override async void OnStarting(Func<object, Task> callback, object state)
-            {
-                await callback(state);
-            }
-
-            public override void Redirect(string location, bool permanent)
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 
