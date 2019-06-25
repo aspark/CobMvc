@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -52,46 +53,70 @@ namespace CobMvc.WebSockets
 
                 try
                 {
-                    var route = CobWebSocket2HttpContextBridge.ConfigRouteData.Routers.OfType<IRouteCollection>().First();
-
-                    var context = CobWebSocket2HttpContextBridge.CreateHttpContext(_context);
-                    context.Request.Path = msg.Method;
-                    context.Request.Method = "Get";
-
-
-                    var routerContext = new RouteContext(context);
-                    await route.RouteAsync(routerContext);
-                    if (routerContext.Handler != null)
+                    var route = CobWebSocket2HttpContextBridge.ConfigRouteData.Routers.OfType<IRouteCollection>().FirstOrDefault();
+                    if (route != null)
                     {
-                        await routerContext.Handler.Invoke(context);
-
-                        string body = "";
-                        context.Response.Body.Position = 0;//???
-                        using (var sr = new StreamReader(context.Response.Body))
+                        var context = CobWebSocket2HttpContextBridge.CreateHttpContext(_context);
+                        var uri = new Uri(msg.Method, UriKind.RelativeOrAbsolute);
+                        if(!uri.IsAbsoluteUri)
                         {
-                            body = await sr.ReadToEndAsync();
+                            uri = new Uri($"http://localhost/{msg.Method.TrimStart('/')}");
                         }
 
-                        if (context.Response.StatusCode == 0)//todo:200
+                        context.Request.Path = uri.AbsolutePath;
+                        context.Request.QueryString = new QueryString(uri.Query);
+                        
+                        var isPost = msg.Params != null && TypeDescriptor.GetProperties(msg.Params).Count > 0;
+                        context.Request.Method = isPost ? "Post" : "Get";
+                        if(isPost)
                         {
-                            var res = new JsonRpcResponse() { ID = msg.ID, Result = JsonConvert.DeserializeObject(body) };
-                            foreach (var header in context.Response.Headers)
+                            var ms = context.Request.Body = new MemoryStream();
+                            using (var sw = new StreamWriter(ms, Encoding.UTF8, 512, true))
                             {
-                                res.Properties[header.Key] = header.Value;
+                                sw.Write(JsonConvert.SerializeObject(msg.Params));
+                                ms.Position = 0;
+                            }
+                        }
+
+                        var routerContext = new RouteContext(context);
+                        await route.RouteAsync(routerContext);
+                        if (routerContext.Handler != null)
+                        {
+                            context.Features.Set<IRoutingFeature>(new RoutingFeature() { RouteData = routerContext.RouteData });
+                            await routerContext.Handler.Invoke(context);
+
+                            string body = "";
+                            using (var ms = context.Response.Body)
+                            {
+                                ms.Position = 0;//???
+                                using (var sr = new StreamReader(ms))
+                                {
+                                    body = await sr.ReadToEndAsync();
+                                }
                             }
 
-                            base.SendAndForget(res);//todo:编解码了多次
+                            if (context.Response.StatusCode == 0)//todo:200
+                            {
+                                var res = new JsonRpcResponse() { ID = msg.ID, Result = JsonConvert.DeserializeObject(body) };
+                                foreach (var header in context.Response.Headers)
+                                {
+                                    res.Properties[header.Key] = header.Value;
+                                }
 
-                            return;
-                        }
-                        else
-                        {
-                            var error = JsonRpcMessages.CreateError(msg.ID, context.Response.StatusCode, ((HttpStatusCode)context.Response.StatusCode).ToString());
-                            error.Error.Data = body;
-                            base.SendAndForget(error);
+                                base.SendAndForget(res);//todo:编解码了多次
 
-                            return;
+                                return;
+                            }
+                            else
+                            {
+                                var error = JsonRpcMessages.CreateError(msg.ID, context.Response.StatusCode, ((HttpStatusCode)context.Response.StatusCode).ToString());
+                                error.Error.Data = body;
+                                base.SendAndForget(error);
+
+                                return;
+                            }
                         }
+
                     }
 
                     base.SendAndForget(JsonRpcMessages.CreateError(msg.ID, "can not route to action"));

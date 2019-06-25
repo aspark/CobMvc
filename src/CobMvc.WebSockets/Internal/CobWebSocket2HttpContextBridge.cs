@@ -56,11 +56,7 @@ namespace CobMvc.WebSockets.HttpFake
         /// <returns></returns>
         private static HttpContext MakeUpHttpContext(HttpContext entryContext)
         {
-            //add features
-            if (entryContext.Features.Get<IRoutingFeature>() == null)
-            {
-                entryContext.Features.Set(Features.Get<IRoutingFeature>());
-            }
+            //
 
             return entryContext;
         }
@@ -72,8 +68,6 @@ namespace CobMvc.WebSockets.HttpFake
         /// <returns></returns>
         public static HttpContext CreateHttpContext(HttpContext entryContext)
         {
-            //MakeUpHttpContext(entryContext);
-
             return new InMemoryHttpContext(entryContext.Features) { RequestServices = entryContext.RequestServices };
         }
 

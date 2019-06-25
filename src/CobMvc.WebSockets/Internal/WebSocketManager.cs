@@ -207,12 +207,12 @@ namespace CobMvc.WebSockets
             {
                 try
                 {
-                    if (_messages.TryTake(out TRec request))
-                    {
-                        await OnReceiveMessage(request);
-                    }
+                    TRec request = _messages.Take(Cancellation);
+                    await OnReceiveMessage(request);
                 }
-                catch(Exception ex)
+                catch (InvalidOperationException) { }
+                catch (OperationCanceledException) { }
+                catch (Exception ex)
                 {
                     _logger.LogError(ex, "HandleMessages");
                 }
@@ -276,19 +276,19 @@ namespace CobMvc.WebSockets
             {
                 try
                 {
-                    if (_sendList.TryTake(out (TaskCompletionSource<bool> Source, TSend Content) pair))
+                    (TaskCompletionSource<bool> Source, TSend Content) pair = _sendList.Take(Cancellation);
+                    var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(pair.Content));
+                    for (var i = 0; i < bytes.Length; i += _minBufferSize)
                     {
-                        var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(pair.Content));
-                        for (var i = 0; i < bytes.Length; i += _minBufferSize)
-                        {
-                            var length = Math.Min(bytes.Length - i, _minBufferSize);
+                        var length = Math.Min(bytes.Length - i, _minBufferSize);
 
-                            _websocket.SendAsync(new ArraySegment<byte>(bytes, i, length), WebSocketMessageType.Text, length < _minBufferSize, _cts.Token).ConfigureAwait(false).GetAwaiter().GetResult();
-                        }
-
-                        pair.Source.TrySetResult(true);
+                        _websocket.SendAsync(new ArraySegment<byte>(bytes, i, length), WebSocketMessageType.Text, length < _minBufferSize, _cts.Token).ConfigureAwait(false).GetAwaiter().GetResult();
                     }
+
+                    pair.Source.TrySetResult(true);
                 }
+                catch (InvalidOperationException) { }
+                catch (OperationCanceledException) { }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "SendResponse");

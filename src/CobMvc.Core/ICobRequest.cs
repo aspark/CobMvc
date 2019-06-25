@@ -91,8 +91,25 @@ namespace CobMvc.Core
         {
             var gt = typeof(TaskCompletionSource<>).MakeGenericType(type);
             var tcs = Activator.CreateInstance(gt);
+            void setTaskException(Exception ex) {
+                gt.GetMethod(nameof(TaskCompletionSource<int>.TrySetException), new[] { typeof(Exception) }).Invoke(tcs, new[] { ex });
+            }
             obj.ContinueWith(t => {
-                gt.GetMethod(nameof(TaskCompletionSource<int>.TrySetResult)).Invoke(tcs, new[] { t.Result });
+                try
+                {
+                    if (t.Exception == null)
+                    {
+                        gt.GetMethod(nameof(TaskCompletionSource<int>.TrySetResult)).Invoke(tcs, new[] { t.Result });
+                    }
+                    else
+                    {
+                        setTaskException(t.Exception.GetBaseException());
+                    }
+                }
+                catch(Exception ex)
+                {
+                    setTaskException(ex.GetBaseException());
+                }
             });
 
             return gt.GetProperty(nameof(TaskCompletionSource<int>.Task)).GetValue(tcs) as Task;
