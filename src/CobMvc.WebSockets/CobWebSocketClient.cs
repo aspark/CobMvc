@@ -10,44 +10,37 @@ using System.Threading.Tasks;
 
 namespace CobMvc.WebSockets
 {
-    class CobWebSocketClient : CobRequestBase
+    internal class CobWebSocketClient : CobRequestBase
     {
-        private ClientWebSocketPool _clientWebSocketPool = null;
+        private ClientWebSocketPoolFactory _clientWebSocketPoolFactory = null;
         ICobMvcContextAccessor _contextAccessor = null;
         ILogger<CobWebSocketClient> _logger = null;
 
-        public CobWebSocketClient(ICobMvcContextAccessor contextAccessor, ILogger<CobWebSocketClient> logger, ClientWebSocketPool clientWebSocketPool)
+        public CobWebSocketClient(ICobMvcContextAccessor contextAccessor, ILogger<CobWebSocketClient> logger, ClientWebSocketPoolFactory clientWebSocketPoolFactory)
         {
             _logger = logger;
             _contextAccessor = contextAccessor;
-            _clientWebSocketPool = clientWebSocketPool;
+            _clientWebSocketPoolFactory = clientWebSocketPoolFactory;
         }
 
         protected override async Task<object> DoRequest(CobRequestContext context, Type realType, object state)
         {
-            var client = _clientWebSocketPool.GetOrCreate(context.Url);
+            var client = _clientWebSocketPoolFactory.GetOrCreate(context).Get();
 
-            var timeout = Task.Delay(TimeSpan.FromSeconds(30));//todo:30s超时可配置
+            var send = await client.Send(ParseToRequest(context));
 
-            var send = client.Send(ParseToRequest(context));
-
-            if(await Task.WhenAny(timeout, send) == timeout)
+            if (send.Error == null)
             {
-                throw new TimeoutException(client.ToString());
-            }
-
-            if (send.Result.Error == null)
-            {
-                if (send.Result.Result is JToken)
+                if (send.Result is JToken)
                 {
                     //return JsonConvert.PopulateObject()
-                    return (send.Result.Result as JToken).ToObject(realType);
+                    return (send.Result as JToken).ToObject(realType);
                 }
 
                 return null;
             }
 
-            throw new Exception(send.Result.Error.Message);
+            throw new Exception(send.Error.Message);
         }
 
         private JsonRpcRequest ParseToRequest(CobRequestContext context)

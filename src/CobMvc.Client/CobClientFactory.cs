@@ -83,7 +83,7 @@ namespace CobMvc.Client
                     parameters[names[i]] = invocation.Arguments[i];
                 }
 
-                var ctx = new TypedCobRequestContext() { Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
+                var ctx = new TypedCobRequestContext() { ServiceName = _desc.ServiceName, TargetAddress = target.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
                 //todo:重试，是否需要重选service?
                 using (var wrap = new ServiceInfoExecution(_selector))
                 {
@@ -201,7 +201,7 @@ namespace CobMvc.Client
             {
                 var url = _desc.GetUrl(target, action);
 
-                var ctx = new CobRequestContext { Parameters = parameters, ReturnType = typeof(T), Url = url };
+                var ctx = new CobRequestContext { ServiceName = _desc.ServiceName, TargetAddress = target.Address, Parameters = parameters, ReturnType = typeof(T), Url = url };
 
                 using (var wrap = new ServiceInfoExecution(_selector))
                 {

@@ -14,6 +14,10 @@ namespace CobMvc.Core
 
     public class CobRequestContext
     {
+        public string ServiceName { get; set; }
+
+        public string TargetAddress { get; set; }
+
         /// <summary>
         /// 调用路径（暂无Query）
         /// </summary>
@@ -68,20 +72,33 @@ namespace CobMvc.Core
                 realReturnType = null;
             }
 
+            //timeout
+            var taskOriginal = converter(realReturnType);
+            var taskTimeout = Task.Delay(TimeSpan.FromSeconds(30));//todo:30s超时可配置
+
+            var taskWrapped = Task.WhenAny(taskOriginal, taskTimeout).ContinueWith(t => {
+                if(t.Result == taskTimeout && taskOriginal.Status < TaskStatus.Running)
+                {
+                    throw new TimeoutException(this.GetDebugInfo());
+                }
+
+                return taskOriginal.Result;
+            });
+
             if (isTask)
             {
                 if (realReturnType == null)//Task
                 {
-                    return converter(realReturnType);
+                    return taskWrapped;
                 }
                 else//Task<T>
                 {
-                    return CreateGenericTask(realReturnType, converter(realReturnType));
+                    return CreateGenericTask(realReturnType, taskWrapped);
                 }
             }
             else if (realReturnType != null)
             {
-                return converter(realReturnType).ConfigureAwait(false).GetAwaiter().GetResult();
+                return taskWrapped.ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
             return null;
@@ -116,5 +133,10 @@ namespace CobMvc.Core
         }
 
         //protected abstract Task<object> Get(Type realType);
+
+        public virtual string GetDebugInfo()
+        {
+            return string.Empty;
+        }
     }
 }

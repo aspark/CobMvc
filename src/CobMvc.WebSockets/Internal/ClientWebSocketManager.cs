@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CobMvc.Core;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -104,17 +105,22 @@ namespace CobMvc.WebSockets
     {
         private ILoggerFactory _loggerFactory = null;
         private ILogger _logger = null;
-        public ClientWebSocketPool(ILoggerFactory loggerFactory)
+        private Uri _targetHost = null;
+        public ClientWebSocketPool(ILoggerFactory loggerFactory, string targetHost)
         {
+            _targetHost = new Uri(targetHost);
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<ClientWebSocketPool>();
         }
 
+        public int PoolSize { get; private set; } = 10;// pool size: 10 sockets
         private ConcurrentDictionary<int, ClientWebSocketManager> _items = new ConcurrentDictionary<int, ClientWebSocketManager>();
-        public ClientWebSocketManager GetOrCreate(string url)
+
+        Random _rnd = new Random(Guid.NewGuid().GetHashCode());
+        //每个服务分配一个池
+        public ClientWebSocketManager Get()
         {
-            var uri = new Uri(url);
-            var key = uri.AbsolutePath.GetHashCode() % 10;// pool size: 10 sockets
+            var key = _rnd.Next() % PoolSize;//todo:使用client.SendingCount最小压力
 
             _logger.LogDebug($"get or add socket client:{key}");
 
@@ -122,13 +128,13 @@ namespace CobMvc.WebSockets
             while (true)
             {
                 client = _items.GetOrAdd(key, k => {
-                    var item = new ClientWebSocketManager(_loggerFactory, uri) { ID = k };
+                    var item = new ClientWebSocketManager(_loggerFactory, _targetHost) { ID = k };
                     item.OnDispose += Item_OnDispose;
                     item.Start();
 
                     return item;
                 });
-
+                
                 if (!client.IsDisposing)
                     break;
             }
@@ -154,6 +160,21 @@ namespace CobMvc.WebSockets
             {
                 Dispose(item);
             }
+        }
+    }
+
+    internal class ClientWebSocketPoolFactory
+    {
+        private ILoggerFactory _loggerFactory = null;
+        public ClientWebSocketPoolFactory(ILoggerFactory loggerFactory)
+        {
+            _loggerFactory = loggerFactory;
+        }
+
+        private ConcurrentDictionary<string, ClientWebSocketPool> _items = new ConcurrentDictionary<string, ClientWebSocketPool>();
+        public ClientWebSocketPool GetOrCreate(CobRequestContext context)
+        {
+            return _items.GetOrAdd(context.TargetAddress ?? new Uri(context.Url).AbsolutePath, k => new ClientWebSocketPool(_loggerFactory, context.TargetAddress ?? context.Url));//按serviceName划池
         }
     }
 }

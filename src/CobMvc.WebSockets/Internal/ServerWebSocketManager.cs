@@ -49,74 +49,41 @@ namespace CobMvc.WebSockets
                     return;
                 }
 
-                //todo:invoke mvc handle
-
                 try
                 {
-                    var route = CobWebSocket2HttpContextBridge.ConfigRouteData.Routers.OfType<IRouteCollection>().FirstOrDefault();
-                    if (route != null)
+                    //invoke mvc handle
+                    HttpContext context = null;
+                    if ((context = await CobWebSocket2HttpContextBridge.Invoke(_context, msg)) != null)
                     {
-                        var context = CobWebSocket2HttpContextBridge.CreateHttpContext(_context);
-                        var uri = new Uri(msg.Method, UriKind.RelativeOrAbsolute);
-                        if(!uri.IsAbsoluteUri)
+                        string body = "";
+                        using (var ms = context.Response.Body)
                         {
-                            uri = new Uri($"http://localhost/{msg.Method.TrimStart('/')}");
-                        }
-
-                        context.Request.Path = uri.AbsolutePath;
-                        context.Request.QueryString = new QueryString(uri.Query);
-                        
-                        var isPost = msg.Params != null && TypeDescriptor.GetProperties(msg.Params).Count > 0;
-                        context.Request.Method = isPost ? "Post" : "Get";
-                        if(isPost)
-                        {
-                            var ms = context.Request.Body = new MemoryStream();
-                            using (var sw = new StreamWriter(ms, Encoding.UTF8, 512, true))
+                            using (var sr = new StreamReader(ms))
                             {
-                                sw.Write(JsonConvert.SerializeObject(msg.Params));
-                                ms.Position = 0;
+                                body = await sr.ReadToEndAsync();
                             }
                         }
 
-                        var routerContext = new RouteContext(context);
-                        await route.RouteAsync(routerContext);
-                        if (routerContext.Handler != null)
+                        if (context.Response.StatusCode == 200)
                         {
-                            context.Features.Set<IRoutingFeature>(new RoutingFeature() { RouteData = routerContext.RouteData });
-                            await routerContext.Handler.Invoke(context);
-
-                            string body = "";
-                            using (var ms = context.Response.Body)
+                            var res = new JsonRpcResponse() { ID = msg.ID, Result = JsonConvert.DeserializeObject(body) };
+                            foreach (var header in context.Response.Headers)
                             {
-                                ms.Position = 0;//???
-                                using (var sr = new StreamReader(ms))
-                                {
-                                    body = await sr.ReadToEndAsync();
-                                }
+                                res.Properties[header.Key] = header.Value;
                             }
 
-                            if (context.Response.StatusCode == 0)//todo:200
-                            {
-                                var res = new JsonRpcResponse() { ID = msg.ID, Result = JsonConvert.DeserializeObject(body) };
-                                foreach (var header in context.Response.Headers)
-                                {
-                                    res.Properties[header.Key] = header.Value;
-                                }
+                            base.SendAndForget(res);//todo:编解码了多次
 
-                                base.SendAndForget(res);//todo:编解码了多次
-
-                                return;
-                            }
-                            else
-                            {
-                                var error = JsonRpcMessages.CreateError(msg.ID, context.Response.StatusCode, ((HttpStatusCode)context.Response.StatusCode).ToString());
-                                error.Error.Data = body;
-                                base.SendAndForget(error);
-
-                                return;
-                            }
+                            return;
                         }
+                        else
+                        {
+                            var error = JsonRpcMessages.CreateError(msg.ID, context.Response.StatusCode, ((HttpStatusCode)context.Response.StatusCode).ToString());
+                            error.Error.Data = body;
+                            base.SendAndForget(error);
 
+                            return;
+                        }
                     }
 
                     base.SendAndForget(JsonRpcMessages.CreateError(msg.ID, "can not route to action"));

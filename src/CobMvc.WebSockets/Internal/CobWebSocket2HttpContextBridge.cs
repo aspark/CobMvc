@@ -2,10 +2,13 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,11 +22,11 @@ namespace CobMvc.WebSockets.HttpFake
     {
         internal const string EntryUrl = "/cobweb/socket/8FBF718E9D8B41ED8686A604CDF4B833";
 
-        public static RouteData ConfigRouteData { get; private set; }
-        public static IFeatureCollection Features { get; private set; }
+        internal static RouteData ConfigRouteData { get; private set; }
+        internal static IFeatureCollection Features { get; private set; }
 
         private static int _hasFake = 0;
-        public static void Mount(HttpContext ctx, Func<Task> next)
+        internal static void Mount(HttpContext ctx, Func<Task> next)
         {
             if (Interlocked.CompareExchange(ref _hasFake, 1, 0) == 1)
             {
@@ -61,14 +64,71 @@ namespace CobMvc.WebSockets.HttpFake
             return entryContext;
         }
 
+        internal static async Task<HttpContext> Invoke(HttpContext entryContext, JsonRpcRequest request)
+        {
+            var route = CobWebSocket2HttpContextBridge.ConfigRouteData.Routers.OfType<IRouteCollection>().FirstOrDefault();
+            if (route != null)
+            {
+                var context = CobWebSocket2HttpContextBridge.CreateHttpContext(entryContext, request);
+
+                var routerContext = new RouteContext(context);
+                await route.RouteAsync(routerContext);
+                if (routerContext.Handler != null)
+                {
+                    context.Features.Set<IRoutingFeature>(new RoutingFeature() { RouteData = routerContext.RouteData });
+                    await routerContext.Handler.Invoke(context);
+
+                    if (context.Response.Body != null)
+                        context.Response.Body.Position = 0;
+
+                    return context;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// 构造httpcontext
         /// </summary>
         /// <param name="entryContext"></param>
         /// <returns></returns>
-        public static HttpContext CreateHttpContext(HttpContext entryContext)
+        internal static HttpContext CreateHttpContext(HttpContext entryContext, JsonRpcRequest request)
         {
-            return new InMemoryHttpContext(entryContext.Features) { RequestServices = entryContext.RequestServices };
+            var context = new InMemoryHttpContext(entryContext.Features) { RequestServices = entryContext.RequestServices };
+            var uri = new Uri(request.Method, UriKind.RelativeOrAbsolute);
+            if (!uri.IsAbsoluteUri)
+            {
+                uri = new Uri($"http://localhost/{request.Method.TrimStart('/')}");
+            }
+
+            context.Request.Path = uri.AbsolutePath;
+            context.Request.QueryString = new QueryString(uri.Query);
+
+            PropertyDescriptorCollection properties = null;
+            var isPost = request.Params != null && (properties = TypeDescriptor.GetProperties(request.Params)).Count > 0;
+            context.Request.Method = isPost ? "Post" : "Get";
+            if (isPost)
+            {
+                context.Request.Headers.Remove("Content-Type");
+                context.Request.Headers.Add("Content-Type", "application/json");
+
+                var ms = context.Request.Body = new MemoryStream();
+                using (var sw = new StreamWriter(ms, new UTF8Encoding(false), 512, true))
+                {
+                    if (properties.Count == 1)
+                    {
+                        sw.Write(JsonConvert.SerializeObject(properties[0].GetValue(request.Params)));
+                    }
+                    else
+                    {
+                        sw.Write(JsonConvert.SerializeObject(request.Params));
+                    }
+                }
+                ms.Position = 0;
+            }
+
+            return context;
         }
 
         private class InMemoryHttpContext : DefaultHttpContext
@@ -86,6 +146,7 @@ namespace CobMvc.WebSockets.HttpFake
             }
 
             public override HttpResponse Response => _response;
+
         }
 
         private class InMemoryHttpResponse : HttpResponse
@@ -99,7 +160,7 @@ namespace CobMvc.WebSockets.HttpFake
             private HttpContext _context = null;
             public override HttpContext HttpContext => _context;
 
-            public override int StatusCode { get; set; }
+            public override int StatusCode { get; set; } = 200;
 
             private HeaderDictionary _header = new HeaderDictionary();
             public override IHeaderDictionary Headers => _header;

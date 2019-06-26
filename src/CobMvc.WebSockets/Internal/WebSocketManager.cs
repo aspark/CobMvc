@@ -247,7 +247,12 @@ namespace CobMvc.WebSockets
             _websocket?.Dispose();
         }
 
-        BlockingCollection<(TaskCompletionSource<bool> Source, TSend Content)> _sendList = new BlockingCollection<(TaskCompletionSource<bool>, TSend)>();
+        private BlockingCollection<(TaskCompletionSource<bool> Source, TSend Content)> _sendList = new BlockingCollection<(TaskCompletionSource<bool>, TSend)>();
+
+        /// <summary>
+        /// 发送队列长度
+        /// </summary>
+        public int SendingCount { get => _sendList.Count; }
 
         /// <summary>
         /// 发送数据

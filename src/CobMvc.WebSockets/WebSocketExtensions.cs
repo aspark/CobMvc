@@ -27,8 +27,9 @@ namespace CobMvc.WebSockets
         {
             web.ConfigureServices(services => {
                 services.AddSingleton<ICobRequest, CobWebSocketClient>();
-                services.AddSingleton<ServerWebSocketPool>();
-                services.AddSingleton<ClientWebSocketPool>();
+                services.AddSingleton<ServerWebSocketPool>(); 
+                //services.AddSingleton<ClientWebSocketPool>();
+                services.AddSingleton<ClientWebSocketPoolFactory>();
             });
 
             return web;
