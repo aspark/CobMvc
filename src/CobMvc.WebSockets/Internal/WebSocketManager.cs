@@ -301,7 +301,7 @@ namespace CobMvc.WebSockets
             }
         }
 
-        public override string ToString()
+        public virtual string GetDebugInfo()
         {
             return $"sending:{_sendList.Count} receiving:{_messages.Count}";
         }

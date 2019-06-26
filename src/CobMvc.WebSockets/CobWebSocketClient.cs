@@ -88,5 +88,10 @@ namespace CobMvc.WebSockets
 
             return true;
         }
+
+        public override string GetDebugInfo()
+        {
+            return _clientWebSocketPoolFactory.GetDebugInfo();
+        }
     }
 }

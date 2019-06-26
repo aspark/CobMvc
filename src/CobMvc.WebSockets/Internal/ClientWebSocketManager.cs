@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -92,9 +93,9 @@ namespace CobMvc.WebSockets
             base.Dispose();
         }
 
-        public override string ToString()
+        public override string GetDebugInfo()
         {
-            return $"send request:{_requestList.Count} {base.ToString()}";
+            return $"request:{_requestList.Count} {base.ToString()}";
         }
     }
 
@@ -113,20 +114,33 @@ namespace CobMvc.WebSockets
             _logger = _loggerFactory.CreateLogger<ClientWebSocketPool>();
         }
 
-        public int PoolSize { get; private set; } = 10;// pool size: 10 sockets
+        public int MaxPoolSize { get; private set; } = 50;// max pool size
+        private volatile int _currentPoolSize = 4;
+        private int _poolSizeIncreaseStep = 2;
         private ConcurrentDictionary<int, ClientWebSocketManager> _items = new ConcurrentDictionary<int, ClientWebSocketManager>();
+        
 
         Random _rnd = new Random(Guid.NewGuid().GetHashCode());
-        //每个服务分配一个池
         public ClientWebSocketManager Get()
         {
-            var key = _rnd.Next() % PoolSize;//todo:使用client.SendingCount最小压力
+            //增加池大小
+            Task.Factory.StartNew(() => {
+                if (_currentPoolSize < MaxPoolSize && _items.Count == _currentPoolSize && _items.Values.Where(i => !i.IsDisposing).All(i => i.SendingCount > 0))
+                {
+                    //increase pool
+                    _currentPoolSize = Math.Min(_currentPoolSize + _poolSizeIncreaseStep, MaxPoolSize);
+                }
+            });
 
-            _logger.LogDebug($"get or add socket client:{key}");
+            (int ID, int SendingCount) randomItem = (_rnd.Next() % _currentPoolSize, 0);
 
             ClientWebSocketManager client = null;
             while (true)
             {
+                var key = _items.Values.Select(i => (i.ID, i.SendingCount)).Concat(new[] { randomItem }).OrderBy(v => v.SendingCount).ThenBy(v => _rnd.Next()).First().ID;//.Where(v => !v.IsDisposing)//client.SendingCount最小
+
+                _logger.LogDebug($"get or add socket client:{key}");
+
                 client = _items.GetOrAdd(key, k => {
                     var item = new ClientWebSocketManager(_loggerFactory, _targetHost) { ID = k };
                     item.OnDispose += Item_OnDispose;
@@ -161,6 +175,11 @@ namespace CobMvc.WebSockets
                 Dispose(item);
             }
         }
+
+        internal string GetDebugInfo()
+        {
+            return $"pool:{_items.Count} \r\n" + string.Join("\t\r\n", _items.Select(i=>string.Format("{0}->{1}", i.Key, i.Value.GetDebugInfo())));
+        }
     }
 
     internal class ClientWebSocketPoolFactory
@@ -172,9 +191,16 @@ namespace CobMvc.WebSockets
         }
 
         private ConcurrentDictionary<string, ClientWebSocketPool> _items = new ConcurrentDictionary<string, ClientWebSocketPool>();
+
+        //每个服务分配一个池
         public ClientWebSocketPool GetOrCreate(CobRequestContext context)
         {
             return _items.GetOrAdd(context.TargetAddress ?? new Uri(context.Url).AbsolutePath, k => new ClientWebSocketPool(_loggerFactory, context.TargetAddress ?? context.Url));//按serviceName划池
+        }
+
+        internal string GetDebugInfo()
+        {
+            return string.Join("\r\n", _items.Select(i => string.Format("{0}->{1}", i.Key, i.Value.GetDebugInfo())));
         }
     }
 }
