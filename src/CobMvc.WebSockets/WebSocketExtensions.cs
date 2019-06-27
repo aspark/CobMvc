@@ -1,4 +1,5 @@
 ﻿using CobMvc.Core;
+using CobMvc.Core.Client;
 using CobMvc.WebSockets.HttpFake;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

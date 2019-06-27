@@ -24,6 +24,8 @@ namespace CobMvc.WebSockets
             _clientWebSocketPoolFactory = clientWebSocketPoolFactory;
         }
 
+        public override string SupportTransport { get => CobRequestTransports.WebSocket; }
+
         protected override async Task<object> DoRequest(CobRequestContext context, Type realType, object state)
         {
             var client = _clientWebSocketPoolFactory.GetOrCreate(context).Get();

@@ -14,20 +14,27 @@ namespace CobMvc.Client
 {
     public static class CobClientExtensions
     {
+        /// <summary>
+        /// 添加CobMvc相关服务
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="setup"></param>
         public static void AddCobMvc(this IServiceCollection services, Action<ICobMvc> setup)
         {
-            services.ConfigureClient();
-
             var container = new DefaultCobMvc(services);
 
             setup?.Invoke(container);
 
             container.ApplyConfigure();
 
-            ConfigureClient(services);
+            EnsureClientServices(services);
         }
 
-        public static void ConfigureClient(this IServiceCollection services)
+        /// <summary>
+        /// 客户端默认服务
+        /// </summary>
+        /// <param name="services"></param>
+        public static void EnsureClientServices(this IServiceCollection services)
         {
             if(services is IEnumerable<ServiceDescriptor> items)
             {
@@ -39,7 +46,8 @@ namespace CobMvc.Client
             }
             services.TryAddSingleton<IServiceRegistration, InMemoryServiceRegistration>();
             services.TryAddSingleton<ICobClientFactory, CobClientFactory>();
-            services.TryAddSingleton<ICobRequest, HttpClientCobRequest>();
+            services.AddSingleton<ICobRequest, HttpClientCobRequest>();
+                        
             services.TryAddSingleton<ICobServiceSelector, DefaultServiceSelector>();
         }
     }

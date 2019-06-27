@@ -31,7 +31,7 @@ namespace CobMvc
 
             container.ApplyConfigure();
 
-            ServicesExtensions.RegisterDefaultServices(mvcBuilder.Services);
+            ServicesExtensions.EnsureServerServices(mvcBuilder.Services);
 
             return mvcBuilder;
         }

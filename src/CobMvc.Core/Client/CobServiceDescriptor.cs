@@ -19,13 +19,36 @@ namespace CobMvc.Core.Client
 
         }
 
+        /// <summary>
+        /// 服务名
+        /// </summary>
         public string ServiceName { get; set; }
 
+        /// <summary>
+        /// 访问路径
+        /// </summary>
         public string Path { get; set; }
 
+        /// <summary>
+        /// 使用的传输类型，默认Http。可选：<see cref="CobRequestTransports"/>
+        /// </summary>
+        public string Transport { get; set; } = "Http";//WebSocket
+
+        ///// <summary>
+        ///// 编码方式，默认json
+        ///// </summary>
+        //public string Formatter { get; set; } = "Json";
+
+        /// <summary>
+        /// 超时时间
+        /// </summary>
         public TimeSpan? Timeout { get; set; }
 
+        /// <summary>
+        /// 重试次数
+        /// </summary>
         public int? Retry { get; set; }
+
 
         public virtual string GetUrl(ServiceInfo service, object action)
         {
@@ -44,7 +67,9 @@ namespace CobMvc.Core.Client
                 ServiceName = ServiceName,
                 Path = Path,
                 Retry = Retry,
-                Timeout = Timeout
+                Timeout = Timeout,
+                Transport = Transport,
+                //Formatter = Formatter
             };
         }
 
@@ -63,6 +88,8 @@ namespace CobMvc.Core.Client
 
             AssignByValidValue(from.Retry, v => Retry = v);
             AssignByValidValue(from.Timeout, v => Timeout = v);
+            AssignByValidValue(from.Transport, v => Transport = v);
+            //AssignByValidValue(from.Formatter, v => Formatter = v);
 
             return this;
         }
@@ -185,6 +212,7 @@ namespace CobMvc.Core.Client
                 desc = new T();
                 desc.ServiceName = serviceAttr.ServiceName;
                 desc.Path = serviceAttr.Path;
+                desc.Transport = serviceAttr.Transport;
 
                 return true;
             }

@@ -17,15 +17,15 @@ namespace CobMvc.Client
 {
     public class CobClientFactory : ICobClientFactory
     {
-        ICobRequest _request = null;
+        ICobRequestResolver _requestResolver = null;
         IServiceRegistration _serviceDiscovery = null;
         ICobServiceDescriptorGenerator _descriptorGenerator = null;
         ILoggerFactory _loggerFactory = null;
 
-        public CobClientFactory(ICobRequest request, IServiceRegistration serviceDiscovery, ICobServiceDescriptorGenerator descriptorGenerator, ILoggerFactory loggerFactory)
+        public CobClientFactory(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, ICobServiceDescriptorGenerator descriptorGenerator, ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
-            _request = request;
+            _requestResolver = requestResolver;
             _serviceDiscovery = serviceDiscovery;
             _descriptorGenerator = descriptorGenerator;
         }
@@ -36,7 +36,7 @@ namespace CobMvc.Client
             var obj = new ProxyGenerator().CreateInterfaceProxyWithoutTarget<T>(_interceptor.GetOrAdd(typeof(T), type=> {
                 var desc = _descriptorGenerator.Create(type);
 
-                return new CobClientIInterceptor(_request, desc, _serviceDiscovery, _loggerFactory);
+                return new CobClientIInterceptor(_requestResolver, desc, _serviceDiscovery, _loggerFactory);
             }));
 
             return obj;
@@ -44,7 +44,7 @@ namespace CobMvc.Client
 
         public ICobClient GetProxy(CobServiceDescriptor desc)//指定post
         {
-            return new CommonCobClient(_request, _serviceDiscovery, desc, _loggerFactory);
+            return new CommonCobClient(_requestResolver, _serviceDiscovery, desc, _loggerFactory);
         }
 
     }
@@ -52,17 +52,17 @@ namespace CobMvc.Client
     internal class CobClientIInterceptor : IInterceptor
     {
         CobServiceDescriptor _desc = null;
-        ICobRequest _request = null;
+        ICobRequestResolver _requestResolver = null;
         ICobServiceSelector _selector = null;
         ILoggerFactory _loggerFactory = null;
         ILogger _logger = null;
 
-        public CobClientIInterceptor(ICobRequest request, CobServiceDescriptor desc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory)
+        public CobClientIInterceptor(ICobRequestResolver requestResolver, CobServiceDescriptor desc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<CobClientIInterceptor>();
             _desc = desc;
-            _request = request;
+            _requestResolver = requestResolver;//change request by service descriptor
             _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName, _loggerFactory.CreateLogger<DefaultServiceSelector>());
         }
 
@@ -89,7 +89,7 @@ namespace CobMvc.Client
                 {
                     wrap.Wrap(target, () =>
                     {
-                        var ret = _request.DoRequest(ctx, null);
+                        var ret = _requestResolver.Get(_desc.Transport).DoRequest(ctx, null);
 
                         return invocation.ReturnValue = ret;
                     });
@@ -183,14 +183,14 @@ namespace CobMvc.Client
     internal class CommonCobClient: ICobClient
     {
         CobServiceDescriptor _desc = null;
-        ICobRequest _request = null;
+        ICobRequestResolver _requestResolver = null;
         ICobServiceSelector _selector = null;
         //ILogger _logger = null;
 
-        public CommonCobClient(ICobRequest request, IServiceRegistration serviceDiscovery, CobServiceDescriptor desc, ILoggerFactory loggerFactory)
+        public CommonCobClient(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, CobServiceDescriptor desc, ILoggerFactory loggerFactory)
         {
             _desc = desc;
-            _request = request;
+            _requestResolver = requestResolver;
             _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName, loggerFactory?.CreateLogger<DefaultServiceSelector>());
         }
 
@@ -207,7 +207,7 @@ namespace CobMvc.Client
                 {
                     return wrap.Wrap(target, () =>
                     {
-                        var ret = (T)_request.DoRequest(ctx, state);
+                        var ret = (T)_requestResolver.Get(_desc.Transport).DoRequest(ctx, state);
 
                         return ret;
                     });

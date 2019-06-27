@@ -13,14 +13,17 @@ namespace CobMvc
 {
     internal class ServicesExtensions
     {
-
-        public static void RegisterDefaultServices(IServiceCollection services)
+        /// <summary>
+        /// Mvc默认服务
+        /// </summary>
+        /// <param name="services"></param>
+        public static void EnsureServerServices(IServiceCollection services)
         {
             services.AddTransient<CobMvcMiddleware>();
 
             services.TryAddSingleton<IServiceRegistration, InMemoryServiceRegistration>();
 
-            services.ConfigureClient();
+            services.EnsureClientServices();
         }
 
     }

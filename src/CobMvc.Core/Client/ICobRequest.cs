@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -9,7 +10,48 @@ namespace CobMvc.Core.Client
 {
     public interface ICobRequest
     {
+        string SupportTransport { get; }//解决原生DI不支持name register
+
         object DoRequest(CobRequestContext context, object state);
+    }
+
+    public class CobRequestTransports
+    {
+        public const string Http = "Http";
+
+        public const string WebSocket = "WebSocket";
+    }
+
+    public interface ICobRequestResolver
+    {
+        ICobRequest Get(string transport);
+
+        void Add(string transport, ICobRequest request);
+    }
+
+    internal class DefaultCobRequestResolver : ICobRequestResolver
+    {
+        public DefaultCobRequestResolver(IServiceProvider serviceProvider)
+        {
+            foreach (var request in serviceProvider.GetServices<ICobRequest>())
+                _dic[request.SupportTransport] = request;
+        }
+
+        Dictionary<string, ICobRequest> _dic = new Dictionary<string, ICobRequest>(StringComparer.InvariantCultureIgnoreCase);
+
+        public void Add(string transport, ICobRequest request)
+        {
+            _dic[transport] = request;
+        }
+
+        public ICobRequest Get(string transport)
+        {
+            if (_dic.ContainsKey(transport))
+                return _dic[transport];
+
+            //return null;
+            throw new NotSupportedException(transport);
+        }
     }
 
     public class CobRequestContext
@@ -50,6 +92,8 @@ namespace CobMvc.Core.Client
         {
             return MatchReturnType(context.ReturnType, realType => DoRequest(context, realType, state));
         }
+
+        public abstract string SupportTransport { get; }
 
         protected abstract Task<object> DoRequest(CobRequestContext context, Type realType, object state);
 

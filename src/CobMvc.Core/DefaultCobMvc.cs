@@ -13,6 +13,14 @@ namespace CobMvc.Core
         public DefaultCobMvc(IServiceCollection services)
         {
             _services = services;
+
+            //add default service
+            _services.AddSingleton<ICobMvc>(this);
+            _services.AddSingleton<ICobRequestResolver, DefaultCobRequestResolver>();
+            _services.TryAddSingleton<ICobServiceDescriptorGenerator, CobServiceDescriptorGenerator>();
+            _services.TryAddSingleton<ICobMvcContextAccessor, CobMvcContextAccessor>();
+            _services.AddOptions<CobMvcOptions>();
+
         }
 
         private IServiceCollection _services = null;
@@ -25,11 +33,6 @@ namespace CobMvc.Core
 
         public void ApplyConfigure()
         {
-            _services.AddSingleton<ICobMvc>(this);
-            _services.TryAddSingleton<ICobServiceDescriptorGenerator, CobServiceDescriptorGenerator>();
-            _services.TryAddSingleton<ICobMvcContextAccessor, CobMvcContextAccessor>();
-            _services.AddOptions<CobMvcOptions>();
-
             _configServices.ForEach(config => config(_services));
         }
 

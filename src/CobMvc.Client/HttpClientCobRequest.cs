@@ -1,4 +1,5 @@
 ﻿using CobMvc.Core;
+using CobMvc.Core.Client;
 using CobMvc.Core.Service;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace CobMvc.Client
 {
-    public class HttpClientCobRequest : CobRequestBase, ICobRequest
+    public class HttpClientCobRequest : CobRequestBase
     {
         HttpClient _client = null;
         ICobMvcContextAccessor _contextAccessor = null;
@@ -24,6 +25,8 @@ namespace CobMvc.Client
             _contextAccessor = contextAccessor;
             _client = new HttpClient();
         }
+
+        public override string SupportTransport { get => CobRequestTransports.Http; }
 
         //支持HttpMethod, 
         //todo:HttpPost FromBodyAttribute需要添加mvc core 引用？
