@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CobMvc.Core
+namespace CobMvc.Core.Client
 {
     public interface ICobRequest
     {

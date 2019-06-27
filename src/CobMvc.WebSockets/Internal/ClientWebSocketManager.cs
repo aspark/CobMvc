@@ -1,4 +1,5 @@
 ﻿using CobMvc.Core;
+using CobMvc.Core.Client;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
