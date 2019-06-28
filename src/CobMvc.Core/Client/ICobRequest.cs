@@ -10,6 +10,9 @@ namespace CobMvc.Core.Client
 {
     public interface ICobRequest
     {
+        /// <summary>
+        /// Http/WebSocket etc...
+        /// </summary>
         string SupportTransport { get; }//解决原生DI不支持name register
 
         object DoRequest(CobRequestContext context, object state);
@@ -76,6 +79,8 @@ namespace CobMvc.Core.Client
         /// 如果为void非为null
         /// </summary>
         public Type ReturnType { get; set; }
+
+        public TimeSpan? Timeout { get; set; }
     }
 
     /// <summary>
@@ -93,7 +98,7 @@ namespace CobMvc.Core.Client
     {
         public object DoRequest(CobRequestContext context, object state)
         {
-            return MatchReturnType(context.ReturnType, realType => DoRequest(context, realType, state));
+            return MatchReturnType(context, realType => DoRequest(context, realType, state));
         }
 
         public abstract string SupportTransport { get; }
@@ -101,10 +106,10 @@ namespace CobMvc.Core.Client
         protected abstract Task<object> DoRequest(CobRequestContext context, Type realType, object state);
 
 
-        internal protected object MatchReturnType(Type returnType, Func<Type, Task<object>> converter)
+        internal protected object MatchReturnType(CobRequestContext context, Func<Type, Task<object>> converter)
         {
             var isTask = false;
-            var realReturnType = returnType;//去掉task/void等泛型
+            var realReturnType = context.ReturnType;//去掉task/void等泛型
             if (typeof(Task).IsAssignableFrom(realReturnType))
             {
 
@@ -121,7 +126,7 @@ namespace CobMvc.Core.Client
 
             //timeout
             var taskOriginal = converter(realReturnType);
-            var taskTimeout = Task.Delay(TimeSpan.FromSeconds(30));//todo:30s超时可配置
+            var taskTimeout = Task.Delay(context.Timeout.HasValue && context.Timeout.Value.TotalSeconds > 0 ? context.Timeout.Value : TimeSpan.FromSeconds(30));//todo:不为空且大于0的超时时间，30s超时可配置
 
             var taskWrapped = Task.WhenAny(taskOriginal, taskTimeout).ContinueWith(t => {
                 if(t.Result == taskTimeout && taskOriginal.Status < TaskStatus.Running)

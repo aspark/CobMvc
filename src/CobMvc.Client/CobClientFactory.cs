@@ -15,6 +15,9 @@ using System.Threading.Tasks;
 
 namespace CobMvc.Client
 {
+    /// <summary>
+    /// 生成客户端的代理工厂
+    /// </summary>
     public class CobClientFactory : ICobClientFactory
     {
         ICobRequestResolver _requestResolver = null;
@@ -42,7 +45,7 @@ namespace CobMvc.Client
             return obj;
         }
 
-        public ICobClient GetProxy(CobServiceDescriptor desc)//指定post
+        public ICobClient GetProxy(CobServiceDescription desc)//指定post
         {
             return new CommonCobClient(_requestResolver, _serviceDiscovery, desc, _loggerFactory);
         }
@@ -51,13 +54,13 @@ namespace CobMvc.Client
 
     internal class CobClientIInterceptor : IInterceptor
     {
-        TypedCobServiceDescriptor _typeDesc = null;
+        TypedCobServiceDescription _typeDesc = null;
         ICobRequestResolver _requestResolver = null;
         ICobServiceSelector _selector = null;
         ILoggerFactory _loggerFactory = null;
         ILogger _logger = null;
 
-        public CobClientIInterceptor(ICobRequestResolver requestResolver, TypedCobServiceDescriptor typeDesc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory)
+        public CobClientIInterceptor(ICobRequestResolver requestResolver, TypedCobServiceDescription typeDesc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<CobClientIInterceptor>();
@@ -74,7 +77,7 @@ namespace CobMvc.Client
             {
                 _logger?.LogDebug("invoke {0}", invocation.Method);
 
-                var url = _typeDesc.GetUrl(target, invocation.Method, out CobServiceDescriptor desc);
+                var url = _typeDesc.GetUrl(target, invocation.Method, out CobServiceDescription desc);
 
                 //设置调用参数
                 var names = invocation.Method.GetParameters().Select(p => p.Name).ToArray();
@@ -83,9 +86,9 @@ namespace CobMvc.Client
                     parameters[names[i]] = invocation.Arguments[i];
                 }
 
-                var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = target.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
+                var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = target.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Timeout = desc.Timeout, Method = invocation.Method };
                 //todo:重试，是否需要重选service?
-                using (var wrap = new ServiceInfoExecution(_selector))
+                using (var wrap = new ServiceInfoExecutionEnv(_selector))
                 {
                     wrap.Wrap(target, () =>
                     {
@@ -105,11 +108,14 @@ namespace CobMvc.Client
         }
     }
 
-    internal class ServiceInfoExecution : IDisposable
+    /// <summary>
+    /// 调用服务的辅助包装类
+    /// </summary>
+    internal class ServiceInfoExecutionEnv : IDisposable
     {
         ICobServiceSelector _selector = null;
 
-        public ServiceInfoExecution(ICobServiceSelector selector)
+        public ServiceInfoExecutionEnv(ICobServiceSelector selector)
         {
             _selector = selector;
             var sw = new Stopwatch();
@@ -180,14 +186,15 @@ namespace CobMvc.Client
         }
     }
 
+
     internal class CommonCobClient: ICobClient
     {
-        CobServiceDescriptor _desc = null;
+        CobServiceDescription _desc = null;
         ICobRequestResolver _requestResolver = null;
         ICobServiceSelector _selector = null;
         //ILogger _logger = null;
 
-        public CommonCobClient(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, CobServiceDescriptor desc, ILoggerFactory loggerFactory)
+        public CommonCobClient(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, CobServiceDescription desc, ILoggerFactory loggerFactory)
         {
             _desc = desc;
             _requestResolver = requestResolver;
@@ -201,9 +208,9 @@ namespace CobMvc.Client
             {
                 var url = _desc.GetUrl(target, action);
 
-                var ctx = new CobRequestContext { ServiceName = _desc.ServiceName, TargetAddress = target.Address, Parameters = parameters, ReturnType = typeof(T), Url = url };
+                var ctx = new CobRequestContext { ServiceName = _desc.ServiceName, TargetAddress = target.Address, Parameters = parameters, ReturnType = typeof(T), Url = url, Timeout = _desc.Timeout };
 
-                using (var wrap = new ServiceInfoExecution(_selector))
+                using (var wrap = new ServiceInfoExecutionEnv(_selector))
                 {
                     return wrap.Wrap(target, () =>
                     {

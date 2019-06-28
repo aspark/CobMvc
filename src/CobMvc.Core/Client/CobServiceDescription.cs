@@ -12,9 +12,9 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 通用服务调用描述
     /// </summary>
-    public class CobServiceDescriptor// : ICloneable
+    public class CobServiceDescription// : ICloneable
     {
-        public CobServiceDescriptor()
+        public CobServiceDescription()
         {
 
         }
@@ -82,7 +82,7 @@ namespace CobMvc.Core.Client
         /// </summary>
         /// <param name="refer"></param>
         /// <returns></returns>
-        public virtual CobServiceDescriptor Refer(CobServiceDescriptor refer)
+        public virtual CobServiceDescription Refer(CobServiceDescription refer)
         {
             AssignByValidValue(this.ServiceName, refer.ServiceName, v => ServiceName = v);
 
@@ -95,24 +95,6 @@ namespace CobMvc.Core.Client
 
             return this;
         }
-
-        //public static void To(CobServiceDescriptor from)
-        //{
-
-        //}
-
-        //private void AssignByValidValue<T>(T value, Action<T> setter)
-        //{
-        //    if (value is string && string.IsNullOrWhiteSpace(value?.ToString()))
-        //    {
-        //        return;
-        //    }
-
-        //    if (object.Equals(value, default(T)))
-        //        return;
-
-        //    setter(value);
-        //}
 
         private void AssignByValidValue<P>(P original, P refer, Action<P> setter)
         {
@@ -137,16 +119,16 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 接口生成的服务调用 
     /// </summary>
-    public class TypedCobServiceDescriptor : CobServiceDescriptor
+    public class TypedCobServiceDescription : CobServiceDescription
     {
-        public ConcurrentDictionary<MethodInfo, TypedCobActionDescriptor> ActionDescriptors { get; private set; } = new ConcurrentDictionary<MethodInfo, TypedCobActionDescriptor>();
+        public ConcurrentDictionary<MethodInfo, TypedCobActionDescription> ActionDescriptors { get; private set; } = new ConcurrentDictionary<MethodInfo, TypedCobActionDescription>();
 
-        public CobServiceDescriptor GetActionDesc(MethodInfo action)
+        public CobServiceDescription GetActionDesc(MethodInfo action)
         {
             return ActionDescriptors.ContainsKey(action) ? ActionDescriptors[action] : this;
         }
 
-        public string GetUrl(ServiceInfo service, object action, out CobServiceDescriptor actionOrTypeDesc)
+        public string GetUrl(ServiceInfo service, object action, out CobServiceDescription actionOrTypeDesc)
         {
             actionOrTypeDesc = this;
             MethodInfo method = null;
@@ -182,9 +164,9 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 方法描述
     /// </summary>
-    public class TypedCobActionDescriptor : TypedCobServiceDescriptor
+    public class TypedCobActionDescription : TypedCobServiceDescription
     {
-        public CobServiceDescriptor Parent { get; internal set; }
+        public CobServiceDescription Parent { get; internal set; }
         public MethodInfo Method { get; internal set; }
 
         public string GetUrl(ServiceInfo service)
@@ -195,7 +177,7 @@ namespace CobMvc.Core.Client
 
         }
 
-        public override CobServiceDescriptor Refer(CobServiceDescriptor refer)
+        public override CobServiceDescription Refer(CobServiceDescription refer)
         {
             this.Parent = refer;
 
@@ -203,41 +185,44 @@ namespace CobMvc.Core.Client
         }
     }
 
+    /// <summary>
+    /// 根据Type生成服务的描述
+    /// </summary>
     public interface ICobServiceDescriptorGenerator
     {
         //TypedCobServiceDescriptor Create<T>() where T : class;
 
-        TypedCobServiceDescriptor Create(Type type);
+        TypedCobServiceDescription Create(Type type);
     }
 
     public class CobServiceDescriptorGenerator : ICobServiceDescriptorGenerator
     {
 
-        private ConcurrentDictionary<Type, TypedCobServiceDescriptor> _serviceDesc = new ConcurrentDictionary<Type, TypedCobServiceDescriptor>();
+        private ConcurrentDictionary<Type, TypedCobServiceDescription> _serviceDesc = new ConcurrentDictionary<Type, TypedCobServiceDescription>();
 
-        public TypedCobServiceDescriptor Create<T>() where T : class
+        public TypedCobServiceDescription Create<T>() where T : class
         {
             return Create(typeof(T));
         }
 
-        public TypedCobServiceDescriptor Create(Type type)
+        public TypedCobServiceDescription Create(Type type)
         {
             var desc = _serviceDesc.GetOrAdd(type, t => CreateImpl(t));
 
             return desc;
         }
 
-        private TypedCobServiceDescriptor CreateImpl(Type targetType)
+        private TypedCobServiceDescription CreateImpl(Type targetType)
         {
             var attrs = targetType.GetCustomAttributes(false);
 
             //CobServiceAttribute
-            ParseCobService(attrs, false, out TypedCobServiceDescriptor global);
+            ParseCobService(attrs, false, out TypedCobServiceDescription global);
 
             foreach(var method in targetType.GetMethods())
             {
                 attrs = method.GetCustomAttributes(false);
-                if(ParseCobService(attrs, true, out TypedCobActionDescriptor item) && item != null)
+                if(ParseCobService(attrs, true, out TypedCobActionDescription item) && item != null)
                 {
                     //合并方法与全局配置
                     item.Refer(global);
@@ -249,7 +234,7 @@ namespace CobMvc.Core.Client
             return global;
         }
 
-        private bool ParseCobService<T>(object[] attrs, bool allowMiss, out T desc) where T: TypedCobServiceDescriptor, new()
+        private bool ParseCobService<T>(object[] attrs, bool allowMiss, out T desc) where T: TypedCobServiceDescription, new()
         {
             desc = null;
             var attr = attrs.FirstOrDefault(a => a is CobServiceAttribute);
@@ -266,6 +251,7 @@ namespace CobMvc.Core.Client
                 desc.ServiceName = serviceAttr.ServiceName;
                 desc.Path = serviceAttr.Path;
                 desc.Transport = serviceAttr.Transport;
+                desc.Timeout = serviceAttr.Timeout > 0 ? new Nullable<TimeSpan>(TimeSpan.FromSeconds(serviceAttr.Timeout)) : null;
 
                 return true;
             }

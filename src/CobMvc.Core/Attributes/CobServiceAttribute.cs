@@ -31,5 +31,10 @@ namespace CobMvc.Core
         /// 使用的传输类型，默认Http。可选：<see cref="CobRequestTransports"/>
         /// </summary>
         public string Transport { get; set; }
+
+        /// <summary>
+        /// 超时时间（秒）。为0时，不设置
+        /// </summary>
+        public float Timeout { get; set; }
     }
 }

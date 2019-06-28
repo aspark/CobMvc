@@ -10,7 +10,7 @@ namespace CobMvc.Core
 
         public int RetryTimes { get; set; }
 
-        //public string DefaultValue { get; set; }
+        public string FallbackValue { get; set; }
     }
 
 }

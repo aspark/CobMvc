@@ -6,7 +6,12 @@ namespace CobMvc.Core
 {
     public class CobCacheAttribute : Attribute
     {
-        public bool Enable { get; set; }
+        public CobCacheAttribute()
+        {
+
+        }
+
+        public bool Enable { get; set; } = true;
     }
 
 }
