@@ -8,7 +8,7 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 通用的客户端
     /// </summary>
-    public interface ICobClient
+    public interface ICobClientProxy
     {
         T Invoke<T>(string name, Dictionary<string, object> parameters, object state);
     }

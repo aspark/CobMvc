@@ -8,6 +8,6 @@ namespace CobMvc.Core.Client
     {
         T GetProxy<T>() where T : class;
 
-        ICobClient GetProxy(CobServiceDescription desc);
+        ICobClientProxy GetProxy(CobServiceDescription desc);
     }
 }

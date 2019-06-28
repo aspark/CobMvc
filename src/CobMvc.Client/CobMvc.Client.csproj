@@ -12,6 +12,7 @@
     <Version>0.0.1-alpha</Version>
     <PackageId>CobMvc.Client</PackageId>
     <Product>CobMvc.Client</Product>
+    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

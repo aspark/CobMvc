@@ -9,9 +9,11 @@ using System.Threading.Tasks;
 namespace CobMvc.Demo.Contract
 {
     [CobService("CobMvcDemo", Path ="/api/test/", Transport = CobRequestTransports.WebSocket, Timeout = 1)]
+    [CobStrategy(RetryTimes = 3, ExceptionTypes = new[] { typeof(TimeoutException) })]
     public interface IDemo
     {
         [CobService(Path = "/api/GetNames")]
+        [CobStrategy(FallbackValue = @"new string[0]")]
         string[] GetNames();
 
         [CobService(Transport = CobRequestTransports.Http)]

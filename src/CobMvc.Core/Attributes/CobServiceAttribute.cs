@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CobMvc.Core
 {
-    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class | AttributeTargets.Method, AllowMultiple =false)]
+    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
     public class CobServiceAttribute : Attribute
     {
         public CobServiceAttribute()

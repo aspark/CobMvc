@@ -45,7 +45,7 @@ namespace CobMvc.Client
                     });
             }
             services.TryAddSingleton<IServiceRegistration, InMemoryServiceRegistration>();
-            services.TryAddSingleton<ICobClientFactory, CobClientFactory>();
+            services.TryAddSingleton<ICobClientFactory, CobClientProxyFactory>();
             services.AddSingleton<ICobRequest, HttpClientCobRequest>();
                         
             services.TryAddSingleton<ICobServiceSelector, DefaultServiceSelector>();

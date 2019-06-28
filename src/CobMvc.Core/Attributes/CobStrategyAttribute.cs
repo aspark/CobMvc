@@ -4,9 +4,10 @@ using System.Text;
 
 namespace CobMvc.Core
 {
+    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
     public class CobStrategyAttribute : Attribute
     {
-        public Type ExceptionType { get; set; }
+        public Type[] ExceptionTypes { get; set; } = new Type[0];
 
         public int RetryTimes { get; set; }
 

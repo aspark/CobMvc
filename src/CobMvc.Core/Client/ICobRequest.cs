@@ -80,7 +80,7 @@ namespace CobMvc.Core.Client
         /// </summary>
         public Type ReturnType { get; set; }
 
-        public TimeSpan? Timeout { get; set; }
+        public TimeSpan Timeout { get; set; }
     }
 
     /// <summary>
@@ -124,18 +124,24 @@ namespace CobMvc.Core.Client
                 realReturnType = null;
             }
 
-            //timeout
             var taskOriginal = converter(realReturnType);
-            var taskTimeout = Task.Delay(context.Timeout.HasValue && context.Timeout.Value.TotalSeconds > 0 ? context.Timeout.Value : TimeSpan.FromSeconds(30));//todo:不为空且大于0的超时时间，30s超时可配置
 
-            var taskWrapped = Task.WhenAny(taskOriginal, taskTimeout).ContinueWith(t => {
-                if(t.Result == taskTimeout && taskOriginal.Status < TaskStatus.Running)
+            var taskWrapped = taskOriginal;
+
+            //timeout
+            if (context.Timeout.TotalSeconds > 0)
+            {
+                var taskTimeout = Task.Delay(context.Timeout.TotalSeconds > 0 ? context.Timeout : TimeSpan.FromSeconds(30));//不为空且大于0的超时时间
+                taskWrapped = Task.WhenAny(taskOriginal, taskTimeout).ContinueWith(t =>
                 {
-                    throw new TimeoutException(this.GetDebugInfo());
-                }
+                    if (t.Result == taskTimeout && taskOriginal.Status < TaskStatus.Running)
+                    {
+                        throw new TimeoutException(this.GetDebugInfo());
+                    }
 
-                return taskOriginal.Result;
-            });
+                    return taskOriginal.Result;
+                });
+            }
 
             if (isTask)
             {

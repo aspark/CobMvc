@@ -42,26 +42,37 @@ namespace CobMvc.Core.Client
         /// <summary>
         /// 超时时间
         /// </summary>
-        public TimeSpan? Timeout { get; set; }
+        public TimeSpan Timeout { get; set; }
 
         /// <summary>
         /// 重试次数
         /// </summary>
-        public int? Retry { get; set; }
+        public int RetryTimes { get; set; }
 
-        //public virtual string GetUrl(ServiceInfo service)
-        //{
-        //    return GetUrl(service.Address, Path);
-        //}
+        /// <summary>
+        /// 失败回退的值
+        /// </summary>
+        public string FallbackValue { get; set; }
 
-        public virtual string GetUrl(ServiceInfo service, object action)
+        /// <summary>
+        /// 重试异常
+        /// </summary>
+        public Type[] RetryExceptionTypes { get; set; }
+
+        /// <summary>
+        /// 根据服务获取调用的地址
+        /// </summary>
+        /// <param name="service"></param>
+        /// <param name="action">方法名</param>
+        /// <returns></returns>
+        public virtual string GetUrl(ServiceInfo service, string action)
         {
-            return GetUrl(service.Address, Path, action?.ToString());
+            return GetUrl(service.Address, Path, action);//?.ToString() ?? ""
         }
 
         protected string GetUrl(params string[] paths)
         {
-            return string.Join("/", paths.Where(p => p != null).Select(p => p.Trim('/')));
+            return string.Join("/", paths.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim('/')));
         }
 
         //public virtual CobServiceDescriptor Clone()
@@ -78,7 +89,7 @@ namespace CobMvc.Core.Client
         //}
 
         /// <summary>
-        /// 使用<paramref name="refer"/>中的非空值覆盖当前值, 但Path为合并
+        /// 使用<paramref name="refer"/>中的非空值覆盖当前值, 但Path/RetryExceptionTypes为合并
         /// </summary>
         /// <param name="refer"></param>
         /// <returns></returns>
@@ -86,12 +97,16 @@ namespace CobMvc.Core.Client
         {
             AssignByValidValue(this.ServiceName, refer.ServiceName, v => ServiceName = v);
 
-            AssignByValidValue(this.ServiceName, refer.ServiceName, v => Path = UriHelper.Combine(v, Path));
+            if (HasValue(Path) && HasValue(refer.Path))
+                Path = UriHelper.Combine(refer.Path, Path);// AssignByValidValue(this.Path, refer.Path, v => );
 
-            AssignByValidValue(this.Retry, refer.Retry, v => Retry = v);
+            AssignByValidValue(this.RetryTimes, refer.RetryTimes, v => RetryTimes = v);
             AssignByValidValue(this.Timeout, refer.Timeout, v => Timeout = v);
             AssignByValidValue(this.Transport, refer.Transport, v => Transport = v);
             //AssignByValidValue(this.Formatter, refer.Formatter, v => Formatter = v);
+            AssignByValidValue(this.FallbackValue, refer.FallbackValue, v => FallbackValue = v);
+            if (HasValue(refer.RetryExceptionTypes))
+                this.RetryExceptionTypes = (this.RetryExceptionTypes ?? new Type[0]).Concat(refer.RetryExceptionTypes).ToArray();
 
             return this;
         }
@@ -104,77 +119,111 @@ namespace CobMvc.Core.Client
 
         private bool HasValue<T>(T value)
         {
+            if (object.Equals(value, default(T)) || IsNullableDefault(value))
+                return false;
+                        
             if (value is string && string.IsNullOrWhiteSpace(value?.ToString()))
             {
                 return false;
             }
 
-            if (object.Equals(value, default(T)))
+            if(value is System.Collections.IEnumerable)
+            {
+                foreach(var item in (value as System.Collections.IEnumerable))
+                    return true;
+
                 return false;
+            }
 
             return true;
+        }
+
+        private bool IsNullableDefault<T>(T value)
+        {
+            var type = Nullable.GetUnderlyingType(typeof(T));
+            if(type != null)
+            {
+                return object.Equals(value, type.IsClass ? null : Activator.CreateInstance(type));
+            }
+
+            return false;
         }
     }
 
     /// <summary>
-    /// 接口生成的服务调用 
+    /// 强类型描述
     /// </summary>
-    public class TypedCobServiceDescription : CobServiceDescription
+    public abstract class CobServiceTypeDescription : CobServiceDescription
+    {
+        public abstract string GetUrl(ServiceInfo service, MethodInfo method);
+    }
+
+    /// <summary>
+    /// 类描述
+    /// </summary>
+    public class CobServiceClassDescription : CobServiceTypeDescription
     {
         public ConcurrentDictionary<MethodInfo, TypedCobActionDescription> ActionDescriptors { get; private set; } = new ConcurrentDictionary<MethodInfo, TypedCobActionDescription>();
 
-        public CobServiceDescription GetActionDesc(MethodInfo action)
+        public CobServiceTypeDescription GetActionOrTypeDesc(MethodInfo action)
         {
-            return ActionDescriptors.ContainsKey(action) ? ActionDescriptors[action] : this;
+            if(ActionDescriptors.ContainsKey(action))
+                return ActionDescriptors[action];
+
+            return this;
         }
 
-        public string GetUrl(ServiceInfo service, object action, out CobServiceDescription actionOrTypeDesc)
+        public string GetUrlByMethodName(ServiceInfo service, string methodName)
         {
-            actionOrTypeDesc = this;
-            MethodInfo method = null;
-
-            if (action is string)
+            if (!string.IsNullOrWhiteSpace(methodName))
             {
-                return base.GetUrl(service, action);
-            }
-            else
-                method = action as MethodInfo;
+                var method = ActionDescriptors.Keys.FirstOrDefault(m => string.Equals(m.Name, methodName, StringComparison.InvariantCultureIgnoreCase));
 
-            if (method == null)
-            {
-                throw new InvalidOperationException($"can not find the methodinfo from:{action}");
+                //按名称没有到本配置，直接使用action拼接返回url
+                if (method != null)
+                    return this.GetUrl(service, method);
             }
 
-            if(ActionDescriptors.ContainsKey(method))
+            return base.GetUrl(service, methodName);
+        }
+
+        public override string GetUrl(ServiceInfo service, MethodInfo method)
+        {
+            if (ActionDescriptors.ContainsKey(method))
             {
-                actionOrTypeDesc = ActionDescriptors[method];
-                
                 return ActionDescriptors[method].GetUrl(service);
             }
 
+            //接用方法名拼接
             return base.GetUrl(service, method.Name);
-        }
 
-        public override string GetUrl(ServiceInfo service, object action)
-        {
-            return GetUrl(service, action, out _);
         }
     }
 
     /// <summary>
     /// 方法描述
     /// </summary>
-    public class TypedCobActionDescription : TypedCobServiceDescription
+    public class TypedCobActionDescription : CobServiceTypeDescription
     {
         public CobServiceDescription Parent { get; internal set; }
-        public MethodInfo Method { get; internal set; }
 
+        public MethodInfo Method { get; internal set; }
+        
         public string GetUrl(ServiceInfo service)
         {
-            var skipMethodName = !string.IsNullOrWhiteSpace(Path);
+            return !string.IsNullOrWhiteSpace(Path) ? base.GetUrl(service.Address, Path) : Parent.GetUrl(service, Method.Name);
+        }
 
-            return skipMethodName ? base.GetUrl(service.Address, Path) : Parent.GetUrl(service, Method.Name);
+        public override string GetUrl(ServiceInfo service, string action)//忽略action
+        {
+            return GetUrl(service);
+        }
 
+        public override string GetUrl(ServiceInfo service, MethodInfo method)//忽略action
+        {
+            //todo:ensure method === Method
+
+            return GetUrl(service);
         }
 
         public override CobServiceDescription Refer(CobServiceDescription refer)
@@ -192,32 +241,32 @@ namespace CobMvc.Core.Client
     {
         //TypedCobServiceDescriptor Create<T>() where T : class;
 
-        TypedCobServiceDescription Create(Type type);
+        CobServiceClassDescription Create(Type type);
     }
 
     public class CobServiceDescriptorGenerator : ICobServiceDescriptorGenerator
     {
 
-        private ConcurrentDictionary<Type, TypedCobServiceDescription> _serviceDesc = new ConcurrentDictionary<Type, TypedCobServiceDescription>();
+        private ConcurrentDictionary<Type, CobServiceClassDescription> _serviceDesc = new ConcurrentDictionary<Type, CobServiceClassDescription>();
 
-        public TypedCobServiceDescription Create<T>() where T : class
+        public CobServiceClassDescription Create<T>() where T : class
         {
             return Create(typeof(T));
         }
 
-        public TypedCobServiceDescription Create(Type type)
+        public CobServiceClassDescription Create(Type type)
         {
             var desc = _serviceDesc.GetOrAdd(type, t => CreateImpl(t));
 
             return desc;
         }
 
-        private TypedCobServiceDescription CreateImpl(Type targetType)
+        private CobServiceClassDescription CreateImpl(Type targetType)
         {
             var attrs = targetType.GetCustomAttributes(false);
 
             //CobServiceAttribute
-            ParseCobService(attrs, false, out TypedCobServiceDescription global);
+            ParseCobService(attrs, false, out CobServiceClassDescription global);
 
             foreach(var method in targetType.GetMethods())
             {
@@ -234,29 +283,45 @@ namespace CobMvc.Core.Client
             return global;
         }
 
-        private bool ParseCobService<T>(object[] attrs, bool allowMiss, out T desc) where T: TypedCobServiceDescription, new()
+        private bool ParseCobService<T>(object[] attrs, bool allowMiss, out T desc) where T: CobServiceDescription, new()
         {
-            desc = null;
+            desc = new T();
+
+            //服务配置
             var attr = attrs.FirstOrDefault(a => a is CobServiceAttribute);
             if (attr == null && !allowMiss)
             {
                 throw new InvalidOperationException($"missing global CobServiceAttribute for interface/class");
             }
 
+            var hasConfig = false;
             if (attr != null)
             {
-                var serviceAttr = attr as CobServiceAttribute;
+                var service = attr as CobServiceAttribute;
 
-                desc = new T();
-                desc.ServiceName = serviceAttr.ServiceName;
-                desc.Path = serviceAttr.Path;
-                desc.Transport = serviceAttr.Transport;
-                desc.Timeout = serviceAttr.Timeout > 0 ? new Nullable<TimeSpan>(TimeSpan.FromSeconds(serviceAttr.Timeout)) : null;
+                desc.ServiceName = service.ServiceName;
+                desc.Path = service.Path;
+                desc.Transport = service.Transport;
+                desc.Timeout = service.Timeout > 0 ? TimeSpan.FromSeconds(service.Timeout) : TimeSpan.FromSeconds(30);//todo:超时可配置
 
-                return true;
+                hasConfig = true;
             }
 
-            return false;
+            //调用策略
+            attr = attrs.FirstOrDefault(a => a is CobStrategyAttribute);
+            if(attr != null)
+            {
+                var strategy = attr as CobStrategyAttribute;
+
+                desc.RetryTimes = strategy.RetryTimes;
+                desc.RetryExceptionTypes = strategy.ExceptionTypes;
+                desc.FallbackValue = strategy.FallbackValue;
+
+                hasConfig = true;
+            }
+
+
+            return hasConfig;
         }
     }
 }
