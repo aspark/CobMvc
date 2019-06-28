@@ -34,7 +34,7 @@ namespace CobMvc.WebSockets
 
             if (send.Error == null)
             {
-                if (send.Result is JToken)
+                if (send.Result is JToken && realType != null)
                 {
                     //return JsonConvert.PopulateObject()
                     return (send.Result as JToken).ToObject(realType);

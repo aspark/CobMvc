@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CobMvc.Core.Common;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -106,25 +107,11 @@ namespace CobMvc.Core.Client
         protected abstract Task<object> DoRequest(CobRequestContext context, Type realType, object state);
 
 
-        internal protected object MatchReturnType(CobRequestContext context, Func<Type, Task<object>> converter)
+        protected internal object MatchReturnType(CobRequestContext context, Func<Type, Task<object>> action)
         {
-            var isTask = false;
-            var realReturnType = context.ReturnType;//去掉task/void等泛型
-            if (typeof(Task).IsAssignableFrom(realReturnType))
-            {
+            var realReturnType = TaskHelper.GetUnderlyingType(context.ReturnType, out bool isTask);//去掉task/void等泛型
 
-                isTask = true;
-                if (realReturnType.IsGenericType)
-                    realReturnType = realReturnType.GetGenericArguments().First();
-                else
-                    realReturnType = null;//无返回值
-            }
-            else if (realReturnType == typeof(void))
-            {
-                realReturnType = null;
-            }
-
-            var taskOriginal = converter(realReturnType);
+            var taskOriginal = action(realReturnType);
 
             var taskWrapped = taskOriginal;
 
@@ -145,14 +132,7 @@ namespace CobMvc.Core.Client
 
             if (isTask)
             {
-                if (realReturnType == null)//Task
-                {
-                    return taskWrapped;
-                }
-                else//Task<T>
-                {
-                    return CreateGenericTask(realReturnType, taskWrapped);
-                }
+                return TaskHelper.ConvertToGeneric(realReturnType, taskWrapped);
             }
             else if (realReturnType != null)
             {
@@ -160,34 +140,6 @@ namespace CobMvc.Core.Client
             }
 
             return null;
-        }
-
-        private Task CreateGenericTask(Type type, Task<object> obj)
-        {
-            var gt = typeof(TaskCompletionSource<>).MakeGenericType(type);
-            var tcs = Activator.CreateInstance(gt);
-            void setTaskException(Exception ex) {
-                gt.GetMethod(nameof(TaskCompletionSource<int>.TrySetException), new[] { typeof(Exception) }).Invoke(tcs, new[] { ex });
-            }
-            obj.ContinueWith(t => {
-                try
-                {
-                    if (t.Exception == null)
-                    {
-                        gt.GetMethod(nameof(TaskCompletionSource<int>.TrySetResult)).Invoke(tcs, new[] { t.Result });
-                    }
-                    else
-                    {
-                        setTaskException(t.Exception.GetBaseException());
-                    }
-                }
-                catch(Exception ex)
-                {
-                    setTaskException(ex.GetBaseException());
-                }
-            });
-
-            return gt.GetProperty(nameof(TaskCompletionSource<int>.Task)).GetValue(tcs) as Task;
         }
 
         //protected abstract Task<object> Get(Type realType);

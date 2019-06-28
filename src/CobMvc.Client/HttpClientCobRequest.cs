@@ -99,7 +99,7 @@ namespace CobMvc.Client
 
             var content = await response.Content.ReadAsStringAsync();
 
-            var value = JsonConvert.DeserializeObject(content, realType);
+            var value = realType != null ? JsonConvert.DeserializeObject(content, realType) : null;
 
             return value;
         }

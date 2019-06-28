@@ -1,5 +1,6 @@
 ﻿using Castle.DynamicProxy;
 using CobMvc.Core.Client;
+using CobMvc.Core.Common;
 using CobMvc.Core.Service;
 using Microsoft.Extensions.Logging;
 using System;
@@ -46,11 +47,11 @@ namespace CobMvc.Client
             {
                 var desc = _typeDesc.GetActionOrTypeDesc(invocation.Method);
 
-                env.Execute(desc, service => {
+                invocation.ReturnValue = env.Execute(invocation.Method.ReturnType, desc, service => {
                     var url = desc.GetUrl(service, invocation.Method);
                     var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = service.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Timeout = desc.Timeout, Method = invocation.Method };
                     
-                    return invocation.ReturnValue = _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
+                    return _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
                 });
             }
         }
@@ -72,17 +73,41 @@ namespace CobMvc.Client
             _selector = selector;
         }
 
-        public void Execute<T>(CobServiceDescription desc, Func<ServiceInfo, T> action)//Func<ServiceInfo, CobServiceDescription> pre, 
+        public object Execute(Type returnType, CobServiceDescription desc, Func<ServiceInfo, object> action)
+        {
+            var realType = TaskHelper.GetUnderlyingType(returnType, out bool isTask);
+
+            var task = Task.Factory.StartNew(() => {
+                Func<ServiceInfo, object> method = null;
+                if (isTask)
+                {
+                    method = s => TaskHelper.GetResult((Task)action(s));
+                }
+                else
+                {
+                    method = action;
+                }
+
+                return ExecuteSync(desc, method);
+            });
+
+            if (isTask)
+                return TaskHelper.ConvertToGeneric(realType, task);
+
+            return task.ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        //同下执行
+        private object ExecuteSync(CobServiceDescription desc, Func<ServiceInfo, object> action)
         {
             var sw = new Stopwatch();
-
             Exception error = null;
-            T result = default(T);
+            object result = null;
 
             //重试
             ServiceInfo service = null;
             var runTimes = 0;
-            while(true)
+            while (true)
             {
                 service = _selector.GetOne();
                 if (service != null)
@@ -108,30 +133,16 @@ namespace CobMvc.Client
                     break;
                 }
 
-
                 _logger.LogError("can not get available service for:{0}", desc.ServiceName);
 
                 //todo:无服务可用，降级？
                 throw new Exception("service select failover");
             }
 
-            //设置状态
             sw.Stop();
-            if (result != null)
-            {
-                if (typeof(Task).IsAssignableFrom(result.GetType()))
-                {
-                    (result as Task).ContinueWith(_ =>
-                    {
-                        error = _.Exception?.GetBaseException();
-                        SetState(service, sw, error);
-                    });
-                }
-            }
-            else
-            {
-                SetState(service, sw, error);
-            }
+            SetState(service, sw, error);
+
+            return result;
         }
 
         private void SetState(ServiceInfo target, Stopwatch sw, Exception error = null)
@@ -140,8 +151,6 @@ namespace CobMvc.Client
             if (error != null)
             {
                 _selector.SetServiceFailed(target);
-
-                //throw error;//???
             }
 
             //todo:设置时间 or 异常
@@ -175,16 +184,13 @@ namespace CobMvc.Client
         {
             using (var env = new ServiceExecutionEnv(_loggerFactory, _selector))
             {
-                T ret = default(T);
-                env.Execute(_desc, service => {
+                return (T)env.Execute(typeof(T), _desc, service => {
                     var url = _desc.GetUrl(service, action);
 
                     var ctx = new CobRequestContext { ServiceName = _desc.ServiceName, TargetAddress = service.Address, Parameters = parameters, ReturnType = typeof(T), Url = url, Timeout = _desc.Timeout };
 
-                    return ret = (T)_requestResolver.Get(_desc.Transport).DoRequest(ctx, state);
+                     return _requestResolver.Get(_desc.Transport).DoRequest(ctx, state);
                 });
-
-                return ret;
             }
         }
     }
