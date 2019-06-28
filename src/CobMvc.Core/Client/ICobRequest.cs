@@ -46,6 +46,9 @@ namespace CobMvc.Core.Client
 
         public ICobRequest Get(string transport)
         {
+            if (string.IsNullOrEmpty(transport))
+                transport = CobRequestTransports.Http;
+
             if (_dic.ContainsKey(transport))
                 return _dic[transport];
 

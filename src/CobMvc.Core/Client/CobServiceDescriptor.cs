@@ -30,9 +30,9 @@ namespace CobMvc.Core.Client
         public string Path { get; set; }
 
         /// <summary>
-        /// 使用的传输类型，默认Http。可选：<see cref="CobRequestTransports"/>
+        /// 使用的传输类型，默认使用Http。可选：<see cref="CobRequestTransports"/>
         /// </summary>
-        public string Transport { get; set; } = "Http";//WebSocket
+        public string Transport { get; set; }
 
         ///// <summary>
         ///// 编码方式，默认json
@@ -49,6 +49,10 @@ namespace CobMvc.Core.Client
         /// </summary>
         public int? Retry { get; set; }
 
+        //public virtual string GetUrl(ServiceInfo service)
+        //{
+        //    return GetUrl(service.Address, Path);
+        //}
 
         public virtual string GetUrl(ServiceInfo service, object action)
         {
@@ -57,54 +61,76 @@ namespace CobMvc.Core.Client
 
         protected string GetUrl(params string[] paths)
         {
-            return string.Join("/", paths.Select(p => p.Trim('/')));
+            return string.Join("/", paths.Where(p => p != null).Select(p => p.Trim('/')));
         }
 
-        public virtual CobServiceDescriptor Clone()
-        {
-            return new CobServiceDescriptor
-            {
-                ServiceName = ServiceName,
-                Path = Path,
-                Retry = Retry,
-                Timeout = Timeout,
-                Transport = Transport,
-                //Formatter = Formatter
-            };
-        }
+        //public virtual CobServiceDescriptor Clone()
+        //{
+        //    return new CobServiceDescriptor
+        //    {
+        //        ServiceName = ServiceName,
+        //        Path = Path,
+        //        Retry = Retry,
+        //        Timeout = Timeout,
+        //        Transport = Transport,
+        //        //Formatter = Formatter
+        //    };
+        //}
 
         /// <summary>
-        /// 使用<paramref name="from"/>中的非空值覆盖当前值, 但Path为合并
+        /// 使用<paramref name="refer"/>中的非空值覆盖当前值, 但Path为合并
         /// </summary>
-        /// <param name="from"></param>
+        /// <param name="refer"></param>
         /// <returns></returns>
-        public virtual CobServiceDescriptor Extend(CobServiceDescriptor from)
+        public virtual CobServiceDescriptor Refer(CobServiceDescriptor refer)
         {
-            AssignByValidValue(from.ServiceName, v => ServiceName = v);
+            AssignByValidValue(this.ServiceName, refer.ServiceName, v => ServiceName = v);
 
-            AssignByValidValue(from.Path, v => {
-                Path = UriHelper.Combine(Path, v);
-            });
+            AssignByValidValue(this.ServiceName, refer.ServiceName, v => Path = UriHelper.Combine(v, Path));
 
-            AssignByValidValue(from.Retry, v => Retry = v);
-            AssignByValidValue(from.Timeout, v => Timeout = v);
-            AssignByValidValue(from.Transport, v => Transport = v);
-            //AssignByValidValue(from.Formatter, v => Formatter = v);
+            AssignByValidValue(this.Retry, refer.Retry, v => Retry = v);
+            AssignByValidValue(this.Timeout, refer.Timeout, v => Timeout = v);
+            AssignByValidValue(this.Transport, refer.Transport, v => Transport = v);
+            //AssignByValidValue(this.Formatter, refer.Formatter, v => Formatter = v);
 
             return this;
         }
 
-        private void AssignByValidValue<T>(T value, Action<T> setter)
+        //public static void To(CobServiceDescriptor from)
+        //{
+
+        //}
+
+        //private void AssignByValidValue<T>(T value, Action<T> setter)
+        //{
+        //    if (value is string && string.IsNullOrWhiteSpace(value?.ToString()))
+        //    {
+        //        return;
+        //    }
+
+        //    if (object.Equals(value, default(T)))
+        //        return;
+
+        //    setter(value);
+        //}
+
+        private void AssignByValidValue<P>(P original, P refer, Action<P> setter)
+        {
+            if(!HasValue(original) && HasValue(refer))
+                setter(refer);
+        }
+
+        private bool HasValue<T>(T value)
         {
             if (value is string && string.IsNullOrWhiteSpace(value?.ToString()))
             {
-                return;
+                return false;
             }
 
             if (object.Equals(value, default(T)))
-                return;
+                return false;
 
-            setter(value);
+            return true;
         }
     }
 
@@ -113,35 +139,43 @@ namespace CobMvc.Core.Client
     /// </summary>
     public class TypedCobServiceDescriptor : CobServiceDescriptor
     {
-        public Dictionary<MethodInfo, TypedCobActionDescriptor> ActionDescriptors = new Dictionary<MethodInfo, TypedCobActionDescriptor>();
+        public ConcurrentDictionary<MethodInfo, TypedCobActionDescriptor> ActionDescriptors { get; private set; } = new ConcurrentDictionary<MethodInfo, TypedCobActionDescriptor>();
 
-        public override string GetUrl(ServiceInfo service, object action)
+        public CobServiceDescriptor GetActionDesc(MethodInfo action)
         {
+            return ActionDescriptors.ContainsKey(action) ? ActionDescriptors[action] : this;
+        }
+
+        public string GetUrl(ServiceInfo service, object action, out CobServiceDescriptor actionOrTypeDesc)
+        {
+            actionOrTypeDesc = this;
             MethodInfo method = null;
+
             if (action is string)
             {
-                var methodName = action.ToString();
-                method = ActionDescriptors.Keys.FirstOrDefault(f => string.Equals(f.Name, methodName, StringComparison.InvariantCultureIgnoreCase));
+                return base.GetUrl(service, action);
             }
             else
                 method = action as MethodInfo;
 
-            if(method == null)
+            if (method == null)
             {
                 throw new InvalidOperationException($"can not find the methodinfo from:{action}");
             }
 
-            var desc = this.Clone();
-
-            var skipMethodName = false;
-            //合并方法与全局配置
-            if (ActionDescriptors.ContainsKey(method))
+            if(ActionDescriptors.ContainsKey(method))
             {
-                skipMethodName = !string.IsNullOrWhiteSpace(ActionDescriptors[method].Path);
-                desc.Extend(ActionDescriptors[method]);
+                actionOrTypeDesc = ActionDescriptors[method];
+                
+                return ActionDescriptors[method].GetUrl(service);
             }
 
-            return skipMethodName ? base.GetUrl(service.Address, desc.Path) : desc.GetUrl(service, method.Name);
+            return base.GetUrl(service, method.Name);
+        }
+
+        public override string GetUrl(ServiceInfo service, object action)
+        {
+            return GetUrl(service, action, out _);
         }
     }
 
@@ -150,7 +184,23 @@ namespace CobMvc.Core.Client
     /// </summary>
     public class TypedCobActionDescriptor : TypedCobServiceDescriptor
     {
+        public CobServiceDescriptor Parent { get; internal set; }
+        public MethodInfo Method { get; internal set; }
 
+        public string GetUrl(ServiceInfo service)
+        {
+            var skipMethodName = !string.IsNullOrWhiteSpace(Path);
+
+            return skipMethodName ? base.GetUrl(service.Address, Path) : Parent.GetUrl(service, Method.Name);
+
+        }
+
+        public override CobServiceDescriptor Refer(CobServiceDescriptor refer)
+        {
+            this.Parent = refer;
+
+            return base.Refer(refer);
+        }
     }
 
     public interface ICobServiceDescriptorGenerator
@@ -189,6 +239,9 @@ namespace CobMvc.Core.Client
                 attrs = method.GetCustomAttributes(false);
                 if(ParseCobService(attrs, true, out TypedCobActionDescriptor item) && item != null)
                 {
+                    //合并方法与全局配置
+                    item.Refer(global);
+                    item.Method = method;
                     global.ActionDescriptors[method] = item;
                 }
             }

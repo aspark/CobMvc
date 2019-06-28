@@ -34,9 +34,9 @@ namespace CobMvc.Client
         public T GetProxy<T>() where T : class//CobClientOptions options
         {
             var obj = new ProxyGenerator().CreateInterfaceProxyWithoutTarget<T>(_interceptor.GetOrAdd(typeof(T), type=> {
-                var desc = _descriptorGenerator.Create(type);
+                var typeDesc = _descriptorGenerator.Create(type);
 
-                return new CobClientIInterceptor(_requestResolver, desc, _serviceDiscovery, _loggerFactory);
+                return new CobClientIInterceptor(_requestResolver, typeDesc, _serviceDiscovery, _loggerFactory);
             }));
 
             return obj;
@@ -51,19 +51,19 @@ namespace CobMvc.Client
 
     internal class CobClientIInterceptor : IInterceptor
     {
-        CobServiceDescriptor _desc = null;
+        TypedCobServiceDescriptor _typeDesc = null;
         ICobRequestResolver _requestResolver = null;
         ICobServiceSelector _selector = null;
         ILoggerFactory _loggerFactory = null;
         ILogger _logger = null;
 
-        public CobClientIInterceptor(ICobRequestResolver requestResolver, CobServiceDescriptor desc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory)
+        public CobClientIInterceptor(ICobRequestResolver requestResolver, TypedCobServiceDescriptor typeDesc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<CobClientIInterceptor>();
-            _desc = desc;
+            _typeDesc = typeDesc;
             _requestResolver = requestResolver;//change request by service descriptor
-            _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName, _loggerFactory.CreateLogger<DefaultServiceSelector>());
+            _selector = new DefaultServiceSelector(serviceDiscovery, _typeDesc.ServiceName, _loggerFactory.CreateLogger<DefaultServiceSelector>());
         }
 
         public void Intercept(IInvocation invocation)
@@ -74,7 +74,7 @@ namespace CobMvc.Client
             {
                 _logger?.LogDebug("invoke {0}", invocation.Method);
 
-                var url = _desc.GetUrl(target, invocation.Method);
+                var url = _typeDesc.GetUrl(target, invocation.Method, out CobServiceDescriptor desc);
 
                 //设置调用参数
                 var names = invocation.Method.GetParameters().Select(p => p.Name).ToArray();
@@ -83,13 +83,13 @@ namespace CobMvc.Client
                     parameters[names[i]] = invocation.Arguments[i];
                 }
 
-                var ctx = new TypedCobRequestContext() { ServiceName = _desc.ServiceName, TargetAddress = target.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
+                var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = target.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };
                 //todo:重试，是否需要重选service?
                 using (var wrap = new ServiceInfoExecution(_selector))
                 {
                     wrap.Wrap(target, () =>
                     {
-                        var ret = _requestResolver.Get(_desc.Transport).DoRequest(ctx, null);
+                        var ret = _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
 
                         return invocation.ReturnValue = ret;
                     });
@@ -98,7 +98,7 @@ namespace CobMvc.Client
                 }
             }
 
-            _logger.LogError("can not get available service for:{0}", _desc.ServiceName);
+            _logger.LogError("can not get available service for:{0}", _typeDesc.ServiceName);
 
             //todo:无服务可用，降级？
             throw new Exception("service select failover");
