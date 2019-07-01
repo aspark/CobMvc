@@ -13,7 +13,6 @@ namespace CobMvc.Demo.Contract
     public interface IDemo
     {
         [CobService(Path = "/api/GetNames")]
-        [CobStrategy(FallbackValue = @"new string[0]")]
         string[] GetNames();
 
         [CobService(Transport = CobRequestTransports.Http)]
@@ -25,7 +24,10 @@ namespace CobMvc.Demo.Contract
         Task SaveUserInfo(UserInfo user);
 
         void Mark(int ms);
-    }
+
+        [CobStrategy(FallbackValue = "new string[1]{\"default\"}")]
+        string[] Fallback();
+  }
 
     public class UserInfo
     {

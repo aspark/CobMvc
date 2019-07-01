@@ -83,5 +83,11 @@ namespace CobMvc.Demo.Controllers
 
             Console.WriteLine($"{time}\t{_cobmvcContextAccessor.Current.TraceID}\tinvoke Mark");
         }
+
+        [HttpGet]
+        public string[] Fallback()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

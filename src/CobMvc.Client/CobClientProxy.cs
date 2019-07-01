@@ -2,8 +2,11 @@
 using CobMvc.Core.Client;
 using CobMvc.Core.Common;
 using CobMvc.Core.Service;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -63,12 +66,14 @@ namespace CobMvc.Client
     /// </summary>
     internal class ServiceExecutionEnv : IDisposable
     {
+        ILoggerFactory _loggerFactory = null;
         ILogger _logger = null;
         //CobServiceDescription _desc = null;
         ICobServiceSelector _selector = null;
 
         public ServiceExecutionEnv(ILoggerFactory loggerFactory, ICobServiceSelector selector)/*CobServiceDescription desc, */
         {
+            _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<ServiceExecutionEnv>();
             _selector = selector;
         }
@@ -191,11 +196,11 @@ namespace CobMvc.Client
             return ExecuteAsync(returnType, desc, asyncAction);
         }
 
-
+        private static ConcurrentDictionary<int, object> _scripts = new ConcurrentDictionary<int, object>();
         private object ExecuteAsync(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task> action)
         {
             //todo:failover
-            var retry = new TaskRetry(_selector, desc.RetryTimes);
+            var retry = new TaskRetry(_loggerFactory, _selector, desc.RetryTimes);
 
             var taskResult = retry.ExecuteRaw(action).ContinueWith(t => {
                 foreach(var item in t.Result)
@@ -212,7 +217,16 @@ namespace CobMvc.Client
                 }
 
                 if (t.Result.All(i => i.Exception != null))
+                {
+                    //降级 fallback
+                    if(!string.IsNullOrWhiteSpace(desc.FallbackValue))
+                    {
+                        _logger.LogInformation("使用缺省值返回");
+                        return _scripts.GetOrAdd(desc.FallbackValue.GetHashCode(), k => CSharpScript.EvaluateAsync(desc.FallbackValue).ConfigureAwait(false).GetAwaiter().GetResult());
+                    }
+
                     throw t.Result.First().Exception;
+                }
 
                 return t.Result.FirstOrDefault(i => i.Exception == null)?.Result;
             });
@@ -241,12 +255,14 @@ namespace CobMvc.Client
 
         private class TaskRetry : IDisposable
         {
+            ILogger _logger = null;
             int _maxTimes = 1;
             TaskCompletionSource<TaskRetryResult>[] _waiters = null;
             ICobServiceSelector _selector = null;
 
-            public TaskRetry(ICobServiceSelector selector, int times)
+            public TaskRetry(ILoggerFactory loggerFactory, ICobServiceSelector selector, int times)
             {
+                _logger = loggerFactory.CreateLogger<ServiceExecutionEnv>();
                 _selector = selector;
                 _maxTimes = times <= 0 ? 1 : times;
                 _waiters = new TaskCompletionSource<TaskRetryResult>[_maxTimes];
@@ -293,7 +309,9 @@ namespace CobMvc.Client
                             if (t.Exception != null)
                             {
                                 //_waiters[index].TrySetException(t.Exception);
-                                _waiters[index].SetResult(new TaskRetryResult(service, t.Exception.GetBaseException()));
+                                var ex = t.Exception.GetBaseException();
+                                _waiters[index].SetResult(new TaskRetryResult(service, ex));
+                                _logger.LogInformation($"执行失败，开始第{index + 1}次重试{service.Name}:{ex.Message}");
                                 ExecuteImpl(action, index + 1);
                             }
                             else

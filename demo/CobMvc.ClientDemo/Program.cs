@@ -79,6 +79,7 @@ namespace CobMvc.ClientDemo
             Console.WriteLine("3: GetUserInfo");
             Console.WriteLine("4: SaveUserInfo");
             Console.WriteLine("5: Mark");
+            Console.WriteLine("6: Fallback");
 
             ConsoleKeyInfo key;
             while ((key = Console.ReadKey()).Key != ConsoleKey.Escape)
@@ -107,6 +108,9 @@ namespace CobMvc.ClientDemo
                     case '5':
                         client.Mark(DateTime.Now.Second);
                         ret = null;
+                        break;
+                    case '6':
+                        ret = client.Fallback();
                         break;
                 }
 
