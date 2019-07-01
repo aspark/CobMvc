@@ -47,10 +47,10 @@ namespace CobMvc.Client
             {
                 var desc = _typeDesc.GetActionOrTypeDesc(invocation.Method);
 
-                invocation.ReturnValue = env.Execute(invocation.Method.ReturnType, desc, service => {
+                invocation.ReturnValue = env.ExecuteWithTask(invocation.Method.ReturnType, desc, service => {
                     var url = desc.GetUrl(service, invocation.Method);
-                    var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = service.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Timeout = desc.Timeout, Method = invocation.Method };
-                    
+                    var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = service.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };//, Timeout = desc.Timeout
+
                     return _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
                 });
             }
@@ -73,93 +73,291 @@ namespace CobMvc.Client
             _selector = selector;
         }
 
-        public object Execute(Type returnType, CobServiceDescription desc, Func<ServiceInfo, object> action)
+        #region 转为同步方法执行
+
+        //public object Execute(Type returnType, CobServiceDescription desc, Func<ServiceInfo, object> action)
+        //{
+        //    var realType = TaskHelper.GetUnderlyingType(returnType, out bool isTask);
+
+        //    var task = Task.Factory.StartNew(() => {
+        //        Func<ServiceInfo, object> method = null;
+        //        if (isTask)
+        //        {
+        //            method = s => TaskHelper.GetResult((Task)action(s));//todo:使用token改为异步等待
+        //        }
+        //        else
+        //        {
+        //            method = action;
+        //        }
+
+        //        return ExecuteSync(desc, method);
+        //    });
+
+        //    if (isTask)
+        //        return TaskHelper.ConvertToGeneric(realType, task);
+
+        //    return task.ConfigureAwait(false).GetAwaiter().GetResult();
+        //}
+
+        ////同步执行
+        //private object ExecuteSync(CobServiceDescription desc, Func<ServiceInfo, object> action)
+        //{
+        //    var sw = new Stopwatch();
+        //    Exception error = null;
+        //    object result = null;
+
+        //    //重试
+        //    ServiceInfo service = null;
+        //    var runTimes = 0;
+        //    while (true)
+        //    {
+        //        service = _selector.GetOne();
+        //        if (service != null)
+        //        {
+        //            runTimes++;
+        //            sw.Restart();
+
+        //            try
+        //            {
+        //                result = action(service);
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                if (desc.RetryTimes > 0 && runTimes < desc.RetryTimes && desc.RetryExceptionTypes != null && desc.RetryExceptionTypes.Length > 0 && desc.RetryExceptionTypes.Contains(ex.GetBaseException().GetType()))
+        //                {
+        //                    //tofo:等待一段时间后再重试，还要避免出现大量重试请求
+        //                    continue;
+        //                }
+
+        //                error = ex.GetBaseException();
+        //            }
+
+        //            break;
+        //        }
+
+        //        _logger.LogError("can not get available service for:{0}", desc.ServiceName);
+
+        //        //todo:无服务可用，降级？
+        //        throw new Exception("service select failover");
+        //    }
+
+        //    sw.Stop();
+        //    SetState(service, sw, error);
+
+        //    return result;
+        //}
+
+        //private void SetState(ServiceInfo target, Stopwatch sw, Exception error = null)
+        //{
+        //    //todo:熔断?
+        ////    if (error != null)
+        ////    {
+        ////        _selector.SetServiceFailed(target);
+        ////    }
+
+        //    //todo:设置时间 or 异常
+        //    _selector.SetServiceResponseTime(target, sw.Elapsed);
+        //}
+
+        #endregion
+
+
+        #region 都转为Task执行
+
+        public object ExecuteWithTask(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task<object>> action)
         {
-            var realType = TaskHelper.GetUnderlyingType(returnType, out bool isTask);
+            Func<ServiceInfo, Task> asyncAction = action;
 
-            var task = Task.Factory.StartNew(() => {
-                Func<ServiceInfo, object> method = null;
-                if (isTask)
-                {
-                    method = s => TaskHelper.GetResult((Task)action(s));
-                }
-                else
-                {
-                    method = action;
-                }
-
-                return ExecuteSync(desc, method);
-            });
-
-            if (isTask)
-                return TaskHelper.ConvertToGeneric(realType, task);
-
-            return task.ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-
-        //同下执行
-        private object ExecuteSync(CobServiceDescription desc, Func<ServiceInfo, object> action)
-        {
-            var sw = new Stopwatch();
-            Exception error = null;
-            object result = null;
-
-            //重试
-            ServiceInfo service = null;
-            var runTimes = 0;
-            while (true)
+            //wrap timeout task
+            if (desc.Timeout.TotalSeconds > 0)
             {
-                service = _selector.GetOne();
-                if (service != null)
-                {
-                    runTimes++;
-                    sw.Restart();
-
-                    try
+                asyncAction = s => {
+                    var taskTimeout = Task.Delay(desc.Timeout.TotalSeconds > 0 ? desc.Timeout : TimeSpan.FromSeconds(30));//不为空且大于0的超时时间
+                    var taskOriginal = action(s);
+                    var taskWrapped = Task.WhenAny(taskOriginal, taskTimeout).ContinueWith(t =>
                     {
-                        result = action(service);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (desc.RetryTimes > 0 && runTimes < desc.RetryTimes && desc.RetryExceptionTypes != null && desc.RetryExceptionTypes.Length > 0 && desc.RetryExceptionTypes.Contains(ex.GetBaseException().GetType()))
+                        if (t.Result == taskTimeout && taskOriginal.Status < TaskStatus.Running)
                         {
-                            //tofo:等待一段时间后再重试，还要避免出现大量重试请求
-                            continue;
+                            throw new TimeoutException();
                         }
 
-                        error = ex.GetBaseException();
-                    }
+                        return taskOriginal.Result;
+                    });
 
-                    break;
+                    return taskWrapped;
+                };
+            }
+
+            return ExecuteAsync(returnType, desc, asyncAction);
+        }
+
+
+        private object ExecuteAsync(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task> action)
+        {
+            //todo:failover
+            var retry = new TaskRetry(_selector, desc.RetryTimes);
+
+            var taskResult = retry.ExecuteRaw(action).ContinueWith(t => {
+                foreach(var item in t.Result)
+                {
+                    if (item.Service != null)
+                    {
+                        //todo:set exception,超过多少次后才设为不可用 熔断?
+                        //if (item.Exception != null)
+                        //    _selector.SetServiceFailed(item.Service);
+
+                        if (item.Duration.HasValue)
+                            _selector.SetServiceResponseTime(item.Service, item.Duration.Value);
+                    }
                 }
 
-                _logger.LogError("can not get available service for:{0}", desc.ServiceName);
+                if (t.Result.All(i => i.Exception != null))
+                    throw t.Result.First().Exception;
 
-                //todo:无服务可用，降级？
-                throw new Exception("service select failover");
-            }
+                return t.Result.FirstOrDefault(i => i.Exception == null)?.Result;
+            });
 
-            sw.Stop();
-            SetState(service, sw, error);
+            var realType = TaskHelper.GetUnderlyingType(returnType, out bool isTask);
 
-            return result;
-        }
-
-        private void SetState(ServiceInfo target, Stopwatch sw, Exception error = null)
-        {
-            //todo:熔断?
-            if (error != null)
+            //匹配返回的类型
+            if (isTask)
             {
-                _selector.SetServiceFailed(target);
+                return TaskHelper.ConvertToGeneric(realType, taskResult);
+            }
+            else if (realType != null)
+            {
+                return taskResult.ConfigureAwait(false).GetAwaiter().GetResult();
             }
 
-            //todo:设置时间 or 异常
-            _selector.SetServiceResponseTime(target, sw.Elapsed);
+            return null;//todo:change to default(T) ??
         }
+
+        #endregion
 
         public void Dispose()
         {
+            
+        }
 
+        private class TaskRetry : IDisposable
+        {
+            int _maxTimes = 1;
+            TaskCompletionSource<TaskRetryResult>[] _waiters = null;
+            ICobServiceSelector _selector = null;
+
+            public TaskRetry(ICobServiceSelector selector, int times)
+            {
+                _selector = selector;
+                _maxTimes = times <= 0 ? 1 : times;
+                _waiters = new TaskCompletionSource<TaskRetryResult>[_maxTimes];
+                for (var i = 0; i < _maxTimes; i++)
+                    _waiters[i] = new TaskCompletionSource<TaskRetryResult>();
+            }
+
+            public Task<TaskRetryResult[]> ExecuteRaw(Func<ServiceInfo, Task> action)
+            {
+                ExecuteImpl(action);
+
+                return Task.WhenAll(_waiters.Select(t => t.Task));
+            }
+
+            public Task<object> Execute(Func<ServiceInfo, Task> action)
+            {
+                return ExecuteRaw(action).ContinueWith(t => {
+                    if (t.Result != null)
+                    {
+                        var result = t.Result.FirstOrDefault(i => i.Exception == null);
+                        if (result != null)
+                            return result.Result;
+
+                        //exception
+                        result = t.Result.FirstOrDefault(i => i.Exception != null);
+                        if (result != null)
+                            throw result.Exception;
+                    }
+
+                    return (object)null;
+                });
+            }
+
+            private void ExecuteImpl(Func<ServiceInfo, Task> action, int index = 0)
+            {
+                if (index >= 0 && index < _maxTimes)
+                {
+                    var service = _selector.GetOne();
+                    if (service != null)
+                    {
+                        var sw = new Stopwatch();
+                        sw.Restart();
+                        action(service).ContinueWith(t => {
+                            if (t.Exception != null)
+                            {
+                                //_waiters[index].TrySetException(t.Exception);
+                                _waiters[index].SetResult(new TaskRetryResult(service, t.Exception.GetBaseException()));
+                                ExecuteImpl(action, index + 1);
+                            }
+                            else
+                            {
+                                object value = null;
+                                if(t.GetType().IsGenericType)//is Task<T>
+                                {
+                                    value = t.GetType().GetProperty("Result").GetValue(t);//dynamic?
+                                }
+
+                                var result = new TaskRetryResult(service, value) { Duration = sw.Elapsed };
+                                //将剩余的设置为完成
+                                for (var i = index; i < _maxTimes; i++)
+                                {
+                                    _waiters[i].TrySetResult(result);
+                                }
+                            }
+                        });
+                    }
+                    else
+                    {
+                        _waiters[index].SetResult(new TaskRetryResult(new Exception("no available service")));//todo:throw cob custom exception
+                        ExecuteImpl(action, index + 1);
+                    }
+                }
+            }
+
+            public void Dispose()
+            {
+                if(_waiters != null)
+                {
+                    
+                }
+            }
+        }
+
+        private class TaskRetryResult
+        {
+            public TaskRetryResult(ServiceInfo service, object result)
+            {
+                Service = service;
+                Result = result;
+            }
+
+            public TaskRetryResult(Exception exception)
+            {
+                Exception = exception;
+            }
+
+            public TaskRetryResult(ServiceInfo service, Exception exception)
+            {
+                Service = service;
+                Exception = exception;
+            }
+
+            public ServiceInfo Service { get; private set; }
+
+            public object Result { get; private set; }
+
+            public Exception Exception { get; private set; }
+
+            public TimeSpan? Duration { get; set; }
+
+            public bool IsSuccess { get => Exception == null; }
         }
     }
 
@@ -184,12 +382,12 @@ namespace CobMvc.Client
         {
             using (var env = new ServiceExecutionEnv(_loggerFactory, _selector))
             {
-                return (T)env.Execute(typeof(T), _desc, service => {
+                return (T)env.ExecuteWithTask(typeof(T), _desc, service => {
                     var url = _desc.GetUrl(service, action);
 
-                    var ctx = new CobRequestContext { ServiceName = _desc.ServiceName, TargetAddress = service.Address, Parameters = parameters, ReturnType = typeof(T), Url = url, Timeout = _desc.Timeout };
+                    var ctx = new CobRequestContext { ServiceName = _desc.ServiceName, TargetAddress = service.Address, Parameters = parameters, ReturnType = typeof(T), Url = url };//, Timeout = _desc.Timeout
 
-                     return _requestResolver.Get(_desc.Transport).DoRequest(ctx, state);
+                    return _requestResolver.Get(_desc.Transport).DoRequest(ctx, state);
                 });
             }
         }

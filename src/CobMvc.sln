@@ -36,6 +36,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0.Solution", "0.Solution", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.WebSockets", "CobMvc.WebSockets\CobMvc.WebSockets.csproj", "{63A928D3-DFB5-49F1-AFD7-2F373EB88B86}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CobMvc.TCloud.Tools", "CobMvc.TCloud.Tools\CobMvc.TCloud.Tools.csproj", "{4B928B3E-CCD2-493E-9AFF-AEF011FFA5E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,6 +88,10 @@ Global
 		{63A928D3-DFB5-49F1-AFD7-2F373EB88B86}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{63A928D3-DFB5-49F1-AFD7-2F373EB88B86}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{63A928D3-DFB5-49F1-AFD7-2F373EB88B86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B928B3E-CCD2-493E-9AFF-AEF011FFA5E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B928B3E-CCD2-493E-9AFF-AEF011FFA5E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B928B3E-CCD2-493E-9AFF-AEF011FFA5E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B928B3E-CCD2-493E-9AFF-AEF011FFA5E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -101,6 +107,7 @@ Global
 		{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E} = {84445325-1C8A-4460-A8AB-0A0418FBDFE8}
 		{B3B5145D-5A10-48C4-B915-6E95189E8B90} = {97C67ED8-304A-459A-9D3D-C5F98121125E}
 		{63A928D3-DFB5-49F1-AFD7-2F373EB88B86} = {97C67ED8-304A-459A-9D3D-C5F98121125E}
+		{4B928B3E-CCD2-493E-9AFF-AEF011FFA5E0} = {97C67ED8-304A-459A-9D3D-C5F98121125E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {18F7E213-AC3B-4608-8E76-A162E4265FC8}

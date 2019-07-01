@@ -65,6 +65,11 @@ namespace CobMvc.Core.Common
             return realType;
         }
 
+        /// <summary>
+        /// 阻断线程等待结果
+        /// </summary>
+        /// <param name="task"></param>
+        /// <returns></returns>
         public static object GetResult(Task task)
         {
             //var result = ((Task)task).ConfigureAwait(false).GetAwaiter().GetResult();
