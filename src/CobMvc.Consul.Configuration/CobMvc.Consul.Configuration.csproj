@@ -9,7 +9,7 @@
     <PackageProjectUrl>https://github.com/aspark/CobMvc</PackageProjectUrl>
     <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
     <PackageTags>consul kv .net core configuration</PackageTags>
-    <Version>0.0.1-alpha</Version>
+    <Version>0.1.0-rc</Version>
     <PackageId>CobMvc.Consul.Configuration</PackageId>
     <Product>CobMvc.Consul.Configuration</Product>
   </PropertyGroup>

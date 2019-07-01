@@ -3,6 +3,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.2</LangVersion>
+    <Version>0.1.0-rc</Version>
+    <Authors>aspark</Authors>
+    <Description>a simple microservice framework base on asp.net core mvc, use websocket as transport</Description>
+    <PackageProjectUrl>https://github.com/aspark/CobMvc</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
+    <Copyright>MIT</Copyright>
+    <PackageTags>microservice asp.net core mvc websocket</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

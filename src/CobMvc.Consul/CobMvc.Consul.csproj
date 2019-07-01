@@ -10,7 +10,7 @@
     <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
     <Copyright>MIT</Copyright>
     <PackageTags>microservice asp.net core mvc</PackageTags>
-    <Version>0.0.1-alpha</Version>
+    <Version>0.1.0-rc</Version>
     <PackageId>CobMvc.Consul</PackageId>
     <Product>CobMvc.Consul</Product>
   </PropertyGroup>

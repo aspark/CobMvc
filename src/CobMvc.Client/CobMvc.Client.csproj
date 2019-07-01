@@ -9,7 +9,7 @@
     <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
     <PackageTags>microservice asp.net core mvc</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.0.1-alpha</Version>
+    <Version>0.1.0-rc</Version>
     <PackageId>CobMvc.Client</PackageId>
     <Product>CobMvc.Client</Product>
     <LangVersion>7.2</LangVersion>

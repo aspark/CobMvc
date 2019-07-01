@@ -13,7 +13,7 @@
     <PackageProjectUrl>https://github.com/aspark/CobMvc</PackageProjectUrl>
     <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
     <PackageTags>microservice asp.net core mvc</PackageTags>
-    <Version>0.0.1-alpha</Version>
+    <Version>0.1.0-rc</Version>
     <Product>CobMvc</Product>
     <PackageLicenseExpression></PackageLicenseExpression>
   </PropertyGroup>
