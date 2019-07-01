@@ -314,7 +314,7 @@ namespace CobMvc.Core.Client
                 var strategy = attr as CobStrategyAttribute;
 
                 desc.RetryTimes = strategy.RetryTimes;
-                desc.RetryExceptionTypes = strategy.ExceptionTypes;
+                desc.RetryExceptionTypes = strategy.Exceptions;
                 desc.FallbackValue = strategy.FallbackValue;
 
                 hasConfig = true;

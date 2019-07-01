@@ -200,7 +200,7 @@ namespace CobMvc.Client
         private object ExecuteAsync(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task> action)
         {
             //todo:failover
-            var retry = new TaskRetry(_loggerFactory, _selector, desc.RetryTimes);
+            var retry = new TaskRetry(_loggerFactory, _selector, desc.RetryTimes, desc.RetryExceptionTypes);
 
             var taskResult = retry.ExecuteRaw(action).ContinueWith(t => {
                 foreach(var item in t.Result)
@@ -256,15 +256,19 @@ namespace CobMvc.Client
         private class TaskRetry : IDisposable
         {
             ILogger _logger = null;
-            int _maxTimes = 1;
             TaskCompletionSource<TaskRetryResult>[] _waiters = null;
             ICobServiceSelector _selector = null;
 
-            public TaskRetry(ILoggerFactory loggerFactory, ICobServiceSelector selector, int times)
+            int _maxTimes = 1;
+            HashSet<Type> _exceptionTypes = null;
+
+            public TaskRetry(ILoggerFactory loggerFactory, ICobServiceSelector selector, int times, Type[] exceptionTypes)
             {
                 _logger = loggerFactory.CreateLogger<ServiceExecutionEnv>();
                 _selector = selector;
                 _maxTimes = times <= 0 ? 1 : times;
+                _exceptionTypes = new HashSet<Type>(exceptionTypes??new Type[0]);
+
                 _waiters = new TaskCompletionSource<TaskRetryResult>[_maxTimes];
                 for (var i = 0; i < _maxTimes; i++)
                     _waiters[i] = new TaskCompletionSource<TaskRetryResult>();
@@ -296,6 +300,15 @@ namespace CobMvc.Client
                 });
             }
 
+            private void SetAllCompleted(int index, TaskRetryResult result)
+            {
+                for (var i = index; i < _maxTimes; i++)
+                {
+                    _waiters[i].TrySetResult(result);
+                }
+
+            }
+
             private void ExecuteImpl(Func<ServiceInfo, Task> action, int index = 0)
             {
                 if (index >= 0 && index < _maxTimes)
@@ -306,13 +319,23 @@ namespace CobMvc.Client
                         var sw = new Stopwatch();
                         sw.Restart();
                         action(service).ContinueWith(t => {
+                            TaskRetryResult result = null;
                             if (t.Exception != null)
                             {
                                 //_waiters[index].TrySetException(t.Exception);
-                                var ex = t.Exception.GetBaseException();
-                                _waiters[index].SetResult(new TaskRetryResult(service, ex));
-                                _logger.LogInformation($"执行失败，开始第{index + 1}次重试{service.Name}:{ex.Message}");
-                                ExecuteImpl(action, index + 1);
+                                var ex = t.Exception.GetInnerException();//.GetBaseException();
+                                result = new TaskRetryResult(service, ex);
+                                if (_exceptionTypes.Count == 0 || _exceptionTypes.Contains(ex.GetType()))
+                                {
+                                    _waiters[index].SetResult(result);
+
+                                    _logger.LogInformation($"执行失败，开始第{index + 1}次重试{service.Name}:{ex.Message}");
+                                    ExecuteImpl(action, index + 1);//todo:间隔一段时间重试。。。可配置
+
+                                    return;
+                                }
+
+                                //不需要重试，后面统一设置完成状态
                             }
                             else
                             {
@@ -322,13 +345,11 @@ namespace CobMvc.Client
                                     value = t.GetType().GetProperty("Result").GetValue(t);//dynamic?
                                 }
 
-                                var result = new TaskRetryResult(service, value) { Duration = sw.Elapsed };
-                                //将剩余的设置为完成
-                                for (var i = index; i < _maxTimes; i++)
-                                {
-                                    _waiters[i].TrySetResult(result);
-                                }
+                                result = new TaskRetryResult(service, value) { Duration = sw.Elapsed };
                             }
+
+                            //将剩余的设置为完成
+                            SetAllCompleted(index, result);
                         });
                     }
                     else

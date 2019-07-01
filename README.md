@@ -74,8 +74,8 @@ Console.WriteLine("返回:{0}", string.Join(", ", strs));
 
 为方便各系统调，可使用接口申明服务提供的api明细。该操作非必须，但在同一解决方案/业务内还是建议使用。
 ```C#
-    [CobService("CobMvcDemo", Path ="/api/test/")]
-    //todo:重试、超时、负载等策略
+    [CobService("CobMvcDemo", Path ="/api/test/", Transport = CobRequestTransports.WebSocket, Timeout = 1)]//使用Websocket通讯，接口调用1秒超时，
+    [CobStrategy(RetryTimes = 3, Exceptions = new[] { typeof(TimeoutException), typeof(Exception) })]//发生超时后，重试次数
     public interface IDemo
     {
         [CobService(Path = "/api/test/GetNames")]
@@ -87,6 +87,11 @@ Console.WriteLine("返回:{0}", string.Join(", ", strs));
 
 
         Task<UserInfo> SaveUserInfo(UserInfo user);
+        
+        void Mark(int ms);
+
+        [CobStrategy(FallbackValue = "new string[1]{\"default\"}")]//服务调用失败后，返回默认值
+        string[] Fallback();
     }
 ```
 
