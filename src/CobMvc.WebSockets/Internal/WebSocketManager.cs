@@ -36,7 +36,15 @@ namespace CobMvc.WebSockets
             if (Interlocked.CompareExchange(ref _hasStart, 1, 0) == 1)
                 return;
 
-            _websocket = GetWebSocket().ConfigureAwait(false).GetAwaiter().GetResult();
+            try
+            {
+                _websocket = GetWebSocket().ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "get websocket exception");
+                throw ex;
+            }
 
             var socket = HandleSocket();//_websocket
 

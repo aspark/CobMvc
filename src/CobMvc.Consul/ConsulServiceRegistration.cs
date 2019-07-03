@@ -143,7 +143,7 @@ namespace CobMvc.Consul
 
         public Task<bool> SetStatus(string id, ServiceInfoStatus status)
         {
-            return Task.FromResult(true);
+            return Task.FromResult(true);//todo:改变服务可用状态
         }
     }
 }

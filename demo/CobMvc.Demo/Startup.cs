@@ -34,7 +34,7 @@ namespace CobMvc.Demo
                 .AddCobMvc(cob => {
                     cob.ConfigureOptions(opt=> {
                         opt.ServiceName = "CobMvcDemo";
-                        opt.ServiceAddress = "http://10.41.102.40:54469";//改为console随机端口
+                        //opt.ServiceAddress = "http://localhost:54469";//改为console随机端口
                         //opt.HealthCheck = "/api/test/Health";
                     });
                     cob.AddConsul(opt=> {

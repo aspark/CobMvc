@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace CobMvc.Demo.Contract
 {
     [CobService("CobMvcDemo", Path ="/api/test/", Transport = CobRequestTransports.WebSocket, Timeout = 1)]
-    [CobRetryStrategy(Count = 4, Exceptions = new[] { typeof(TimeoutException), typeof(Exception) })]
+    [CobRetryStrategy(Count = 5, Exceptions = new[] { typeof(TimeoutException), typeof(Exception) })]
     public interface IDemo
     {
         [CobService(Path = "/api/GetNames")]

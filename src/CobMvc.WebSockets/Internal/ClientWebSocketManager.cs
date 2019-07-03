@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CobMvc.WebSockets
@@ -51,11 +52,15 @@ namespace CobMvc.WebSockets
         private void KeepAlive()
         {
 //#if !DEBUG
-            Task.Delay(30000, base.Cancellation).ContinueWith(t => {
-                base.Send(JsonRpcMessages.PingRequest).ConfigureAwait(false).GetAwaiter().GetResult();
-
-                KeepAlive();
-            });
+            while(!this.IsDisposing)
+            {
+                Thread.Sleep(30000);
+                try
+                {
+                    base.Send(JsonRpcMessages.PingRequest).ConfigureAwait(false).GetAwaiter().GetResult();
+                }
+                catch { }
+            }
 //#endif
         }
 
@@ -141,7 +146,7 @@ namespace CobMvc.WebSockets
             (int ID, int SendingCount) randomItem = (_rnd.Next() % _currentPoolSize, 0);
 
             ClientWebSocketManager client = null;
-            while (true)
+            for (var x = _items.Count; x >= 0; x--)
             {
                 var key = _items.Values.Select(i => (i.ID, i.SendingCount)).Concat(new[] { randomItem }).OrderBy(v => v.SendingCount).ThenBy(v => _rnd.Next()).First().ID;//.Where(v => !v.IsDisposing)//client.SendingCount最小
 
@@ -157,6 +162,8 @@ namespace CobMvc.WebSockets
                 
                 if (!client.IsDisposing)
                     break;
+
+                client = null;//状态不可用
             }
 
             return client;
