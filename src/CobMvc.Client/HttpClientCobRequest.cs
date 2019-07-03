@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace CobMvc.Client
 {
-    public class HttpClientCobRequest : CobRequestBase
+    internal class HttpClientCobRequest : CobRequestBase
     {
         HttpClient _client = null;
         ICobMvcContextAccessor _contextAccessor = null;

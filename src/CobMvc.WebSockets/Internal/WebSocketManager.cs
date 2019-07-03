@@ -29,19 +29,28 @@ namespace CobMvc.WebSockets
         }
 
         private int _hasStart = 0;
+        private WebSocket _websocket = null;
         private Task _waitHandle = null;
         public virtual void Start()
         {
             if (Interlocked.CompareExchange(ref _hasStart, 1, 0) == 1)
                 return;
 
-            var socket = HandleSocket();
+            _websocket = GetWebSocket().ConfigureAwait(false).GetAwaiter().GetResult();
+
+            var socket = HandleSocket();//_websocket
 
             var messages = Task.Factory.StartNew(HandleMessages, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-            var send = Task.Factory.StartNew(SendResponse, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            var send = Task.Factory.StartNew(SendImpl, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
             _waitHandle = socket.ContinueWith(t=> {
+                if(t.Exception!=null)
+                {
+                    //这里有异常，如果在Dispose中直观表现：socketException
+                    _logger.LogError(t.Exception, "socket exception");
+                }
+
                 Dispose();
             });
         }
@@ -55,11 +64,8 @@ namespace CobMvc.WebSockets
 
         protected CancellationToken Cancellation { get => _cts.Token; }
 
-        private WebSocket _websocket = null;
         private async Task HandleSocket()
         {
-            _websocket = GetWebSocket().ConfigureAwait(false).GetAwaiter().GetResult();
-
             //change to Rx?
             var pipe = new Pipe();
             var write = FillPipe(_websocket, pipe.Writer);
@@ -275,28 +281,37 @@ namespace CobMvc.WebSockets
             Send(response).ConfigureAwait(false);
         }
 
-        private void SendResponse()
+        private void SendImpl()
         {
             while (!_sendList.IsCompleted && !_cts.IsCancellationRequested)
             {
+                var isSuccess = false;
+                (TaskCompletionSource<bool> Source, TSend Content) pair = (null, null);
                 try
                 {
-                    (TaskCompletionSource<bool> Source, TSend Content) pair = _sendList.Take(Cancellation);
-                    var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(pair.Content));
-                    for (var i = 0; i < bytes.Length; i += _minBufferSize)
+                    if(_websocket != null)
                     {
-                        var length = Math.Min(bytes.Length - i, _minBufferSize);
+                        pair = _sendList.Take(Cancellation);
+                        var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(pair.Content));
+                        for (var i = 0; i < bytes.Length; i += _minBufferSize)
+                        {
+                            var length = Math.Min(bytes.Length - i, _minBufferSize);
 
-                        _websocket.SendAsync(new ArraySegment<byte>(bytes, i, length), WebSocketMessageType.Text, length < _minBufferSize, _cts.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                            _websocket.SendAsync(new ArraySegment<byte>(bytes, i, length), WebSocketMessageType.Text, length < _minBufferSize, _cts.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                        }
+
+                        isSuccess = true;
                     }
-
-                    pair.Source.TrySetResult(true);
                 }
                 catch (InvalidOperationException) { }
                 catch (OperationCanceledException) { }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "SendResponse");
+                    _logger.LogError(ex, "Send response failed");
+                }
+                finally
+                {
+                    pair.Source?.TrySetResult(isSuccess);
                 }
             }
         }

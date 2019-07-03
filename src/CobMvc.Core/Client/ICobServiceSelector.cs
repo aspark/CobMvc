@@ -9,8 +9,8 @@ namespace CobMvc.Core.Client
     {
         ServiceInfo GetOne();
 
-        void SetServiceResponseTime(ServiceInfo service, TimeSpan time);
+        void MarkServiceHealthy(ServiceInfo service, TimeSpan responseTime);
 
-        void SetServiceFailed(ServiceInfo service);
+        void MarkServiceFailed(ServiceInfo service, bool notifyRegistry);
     }
 }

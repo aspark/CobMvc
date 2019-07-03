@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace CobMvc.Demo.Contract
 {
     [CobService("CobMvcDemo", Path ="/api/test/", Transport = CobRequestTransports.WebSocket, Timeout = 1)]
-    [CobStrategy(RetryTimes = 3, Exceptions = new[] { typeof(TimeoutException), typeof(Exception) })]
+    [CobRetryStrategy(Count = 4, Exceptions = new[] { typeof(TimeoutException), typeof(Exception) })]
     public interface IDemo
     {
         [CobService(Path = "/api/GetNames")]
@@ -25,7 +25,7 @@ namespace CobMvc.Demo.Contract
 
         void Mark(int ms);
 
-        [CobStrategy(FallbackValue = "new string[1]{\"default\"}")]
+        [CobRetryStrategy(FallbackValue = "new string[1]{\"default\"}")]
         string[] Fallback();
   }
 

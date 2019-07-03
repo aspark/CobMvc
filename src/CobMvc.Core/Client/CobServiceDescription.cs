@@ -308,12 +308,12 @@ namespace CobMvc.Core.Client
             }
 
             //调用策略
-            attr = attrs.FirstOrDefault(a => a is CobStrategyAttribute);
+            attr = attrs.FirstOrDefault(a => a is CobRetryStrategyAttribute);
             if(attr != null)
             {
-                var strategy = attr as CobStrategyAttribute;
+                var strategy = attr as CobRetryStrategyAttribute;
 
-                desc.RetryTimes = strategy.RetryTimes;
+                desc.RetryTimes = strategy.Count;
                 desc.RetryExceptionTypes = strategy.Exceptions;
                 desc.FallbackValue = strategy.FallbackValue;
 

@@ -1,4 +1,5 @@
 ﻿using CobMvc.Core.Client;
+using CobMvc.Core.Common;
 using CobMvc.Core.Service;
 using Microsoft.Extensions.Logging;
 using System;
@@ -11,10 +12,10 @@ using System.Threading.Tasks;
 
 namespace CobMvc.Client
 {
-    //服务路由
-    public class DefaultServiceSelector : ICobServiceSelector
+    //服务选择/路由
+    internal class DefaultServiceSelector : ICobServiceSelector
     {
-        ConcurrentDictionary<string, ServiceInfoStatus> _services = new ConcurrentDictionary<string, ServiceInfoStatus>();
+        ConcurrentDictionary<string, ServiceInfoBag> _services = new ConcurrentDictionary<string, ServiceInfoBag>();
         IServiceRegistration _serviceRegistration;
         string _serviceName;
         ILogger<DefaultServiceSelector> _logger;
@@ -37,26 +38,36 @@ namespace CobMvc.Client
             }
         }
 
-        //todo:定时刷新
+        //定时刷新
         private async Task Refresh()
         {
-            var services = await _serviceRegistration.GetByName(_serviceName);
-            _logger?.LogDebug("find {0} servcies for {1}", services.Count, _serviceName);
-
-            var exists = new HashSet<string>();
-            foreach (var svc in services)
+            var hasError = false;
+            try
             {
-                _services.GetOrAdd(svc.ID, id => new ServiceInfoStatus(svc)).Service = svc;
-                exists.Add(svc.ID);
+                var services = await _serviceRegistration.GetByName(_serviceName);
+                _logger?.LogDebug("find {0} servcies for {1}", services.Count, _serviceName);
+
+                var exists = new HashSet<string>();
+                foreach (var svc in services)
+                {
+                    _services.GetOrAdd(svc.ID, id => new ServiceInfoBag(svc)).Service = svc;//更新service状态
+                    exists.Add(svc.ID);
+                }
+
+                //移除不存在的服务
+                var saved = _services.Keys;
+                foreach (var del in saved.Where(s => !exists.Contains(s)))
+                {
+                    _services.TryRemove(del, out _);
+                }
+            }
+            catch(Exception ex)
+            {
+                hasError = true;
+                _logger.LogError(ex, "service refresh failed");
             }
 
-            var saved = _services.Keys;
-            foreach(var del in saved.Where(s=>!exists.Contains(s)))
-            {
-                _services.TryRemove(del, out _);
-            }
-
-            Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(t => Refresh().Wait());
+            Task.Delay(hasError ? TimeSpan.FromMinutes(1) : TimeSpan.FromSeconds(3)).ContinueWith(t => Refresh().Wait());//todo:时间可配置
         }
 
         private int _currentServiceIndex = -1;
@@ -75,7 +86,7 @@ namespace CobMvc.Client
             {
                 Interlocked.Increment(ref _currentServiceIndex);
                 var index = (_currentServiceIndex) % services.Length;
-                if (services[index].Service.Status == Core.Service.ServiceInfoStatus.Healthy)
+                if (services[index].HasFailed.Value == false && services[index].Service.Status == Core.Service.ServiceInfoStatus.Healthy)
                 {
                     services[index].RequestCount++;
                     target = services[index].Service;
@@ -91,34 +102,38 @@ namespace CobMvc.Client
             return target;
         }
 
-        public void SetServiceFailed(ServiceInfo service)
-        {
-            if (_services.TryGetValue(service.ID, out ServiceInfoStatus status))
-            {
-                status.FailedCount++;
 
-                //_serviceRegistration.SetStatus(service.ID, Core.Service.ServiceInfoStatus.Warning);
+        public void MarkServiceFailed(ServiceInfo service, bool notifyRegistry)
+        {
+            if (_services.TryGetValue(service.ID, out ServiceInfoBag status))
+            {
+                status.HasFailed.Set();
+
+                if (notifyRegistry || status.HasFailed.IsExceeded)//异常超出阈值
+                    _serviceRegistration.SetStatus(service.ID, Core.Service.ServiceInfoStatus.Warning);//是否需要改变注册中心的状态?
             }
         }
 
-        public void SetServiceResponseTime(ServiceInfo service, TimeSpan time)
+        public void MarkServiceHealthy(ServiceInfo service, TimeSpan time)
         {
-            if (_services.TryGetValue(service.ID, out ServiceInfoStatus status))
+            if (_services.TryGetValue(service.ID, out ServiceInfoBag status))
             {
+                status.HasFailed.Reset();
                 status.ResponseTime = time.Ticks;
             }
         }
 
-        private class ServiceInfoStatus
+        private class ServiceInfoBag
         {
-            public ServiceInfoStatus(ServiceInfo service)
+            public ServiceInfoBag(ServiceInfo service)
             {
+                HasFailed = new ThresholdAutoResetSignal(3, 500);//3次错误才标记为异常状态，每500/1000/2000...恢复一次
                 Service = service;
             }
 
             public ServiceInfo Service { get; set; }
 
-            public volatile int FailedCount = 0;
+            public ThresholdAutoResetSignal HasFailed { get; private set; }
 
             /// <summary>
             /// 响应时间

@@ -50,7 +50,7 @@ namespace CobMvc.Client
             {
                 var desc = _typeDesc.GetActionOrTypeDesc(invocation.Method);
 
-                invocation.ReturnValue = env.ExecuteWithTask(invocation.Method.ReturnType, desc, service => {
+                invocation.ReturnValue = env.Execute(invocation.Method.ReturnType, desc, service => {
                     var url = desc.GetUrl(service, invocation.Method);
                     var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = service.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };//, Timeout = desc.Timeout
 
@@ -77,6 +77,7 @@ namespace CobMvc.Client
             _logger = loggerFactory.CreateLogger<ServiceExecutionEnv>();
             _selector = selector;
         }
+
 
         #region 转为同步方法执行
 
@@ -169,7 +170,7 @@ namespace CobMvc.Client
 
         #region 都转为Task执行
 
-        public object ExecuteWithTask(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task<object>> action)
+        public object Execute(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task<object>> action)
         {
             Func<ServiceInfo, Task> asyncAction = action;
 
@@ -199,7 +200,6 @@ namespace CobMvc.Client
         private static ConcurrentDictionary<int, object> _scripts = new ConcurrentDictionary<int, object>();
         private object ExecuteAsync(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task> action)
         {
-            //todo:failover
             var retry = new TaskRetry(_loggerFactory, _selector, desc.RetryTimes, desc.RetryExceptionTypes);
 
             var taskResult = retry.ExecuteRaw(action).ContinueWith(t => {
@@ -207,25 +207,28 @@ namespace CobMvc.Client
                 {
                     if (item.Service != null)
                     {
-                        //todo:set exception,超过多少次后才设为不可用 熔断?
-                        //if (item.Exception != null)
-                        //    _selector.SetServiceFailed(item.Service);
-
-                        if (item.Duration.HasValue)
-                            _selector.SetServiceResponseTime(item.Service, item.Duration.Value);
+                        //set exception,超过阈值后熔断
+                        if (item.Exception != null)
+                        {
+                            _selector.MarkServiceFailed(item.Service, false);
+                        }
+                        else if (item.Duration.HasValue)
+                            _selector.MarkServiceHealthy(item.Service, item.Duration.Value);
                     }
                 }
 
                 if (t.Result.All(i => i.Exception != null))
                 {
+                    //failover
                     //降级 fallback
-                    if(!string.IsNullOrWhiteSpace(desc.FallbackValue))
+                    if (!string.IsNullOrWhiteSpace(desc.FallbackValue))
                     {
                         _logger.LogInformation("使用缺省值返回");
                         return _scripts.GetOrAdd(desc.FallbackValue.GetHashCode(), k => CSharpScript.EvaluateAsync(desc.FallbackValue).ConfigureAwait(false).GetAwaiter().GetResult());
                     }
 
-                    throw t.Result.First().Exception;
+                    //没有缺省值时，抛出异常
+                    throw t.Result.First().Exception.GetInnerException();
                 }
 
                 return t.Result.FirstOrDefault(i => i.Exception == null)?.Result;
@@ -253,6 +256,7 @@ namespace CobMvc.Client
             
         }
 
+        //action重试辅助类
         private class TaskRetry : IDisposable
         {
             ILogger _logger = null;
@@ -421,7 +425,7 @@ namespace CobMvc.Client
         {
             using (var env = new ServiceExecutionEnv(_loggerFactory, _selector))
             {
-                return (T)env.ExecuteWithTask(typeof(T), _desc, service => {
+                return (T)env.Execute(typeof(T), _desc, service => {
                     var url = _desc.GetUrl(service, action);
 
                     var ctx = new CobRequestContext { ServiceName = _desc.ServiceName, TargetAddress = service.Address, Parameters = parameters, ReturnType = typeof(T), Url = url };//, Timeout = _desc.Timeout

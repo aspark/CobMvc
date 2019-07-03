@@ -50,13 +50,13 @@ namespace CobMvc.WebSockets
 
         private void KeepAlive()
         {
-#if !DEBUG
+//#if !DEBUG
             Task.Delay(30000, base.Cancellation).ContinueWith(t => {
                 base.Send(JsonRpcMessages.PingRequest).ConfigureAwait(false).GetAwaiter().GetResult();
 
                 KeepAlive();
             });
-#endif
+//#endif
         }
 
         protected override async Task<WebSocket> GetWebSocket()
@@ -72,7 +72,12 @@ namespace CobMvc.WebSockets
         {
             var tcs = new TaskCompletionSource<JsonRpcResponse>();
             _requestList.TryAdd(request.ID, tcs);
-            base.Send(request);
+            base.Send(request).ContinueWith(t=> {
+                if (!t.Result)
+                {
+                    OnReceiveMessage(JsonRpcMessages.CreateError(request.ID, "send failed"));
+                }
+            });
 
             return tcs.Task;
         }

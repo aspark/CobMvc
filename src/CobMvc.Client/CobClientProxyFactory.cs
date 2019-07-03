@@ -10,7 +10,7 @@ namespace CobMvc.Client
     /// <summary>
     /// 生成客户端的代理工厂
     /// </summary>
-    public class CobClientProxyFactory : ICobClientFactory
+    internal class CobClientProxyFactory : ICobClientFactory
     {
         ICobRequestResolver _requestResolver = null;
         IServiceRegistration _serviceDiscovery = null;
