@@ -1,4 +1,5 @@
 ﻿using Castle.DynamicProxy;
+using CobMvc.Core;
 using CobMvc.Core.Client;
 using CobMvc.Core.Common;
 using CobMvc.Core.Service;
@@ -10,6 +11,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -55,7 +57,7 @@ namespace CobMvc.Client
                     var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = service.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };//, Timeout = desc.Timeout
 
                     return _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
-                });
+                }, invocation.Method, parameters);
             }
         }
     }
@@ -170,7 +172,7 @@ namespace CobMvc.Client
 
         #region 都转为Task执行
 
-        public object Execute(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task<object>> action)
+        public object Execute(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task<object>> action, MethodInfo method = null, Dictionary<string, object> parameters = null)
         {
             Func<ServiceInfo, Task> asyncAction = action;
 
@@ -194,13 +196,14 @@ namespace CobMvc.Client
                 };
             }
 
-            return ExecuteAsync(returnType, desc, asyncAction);
+            return ExecuteAsync(returnType, desc, asyncAction, method, parameters);
         }
 
-        private static ConcurrentDictionary<int, object> _scripts = new ConcurrentDictionary<int, object>();
-        private object ExecuteAsync(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task> action)
+        private static ConcurrentDictionary<string, object> _scripts = new ConcurrentDictionary<string, object>();
+        private static ConcurrentDictionary<Type, ICobFallbackHandler> _fallbackHandlers = new ConcurrentDictionary<Type, ICobFallbackHandler>();
+        private object ExecuteAsync(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task> action, MethodInfo method = null, Dictionary<string, object> parameters = null)
         {
-            var retry = new TaskRetry(_loggerFactory, _selector, desc.RetryTimes, desc.RetryExceptionTypes);
+            var retry = new ServiceTaskRetry(_loggerFactory, _selector, desc.RetryTimes, desc.RetryExceptionTypes);
 
             var taskResult = retry.ExecuteRaw(action).ContinueWith(t => {
                 foreach(var item in t.Result)
@@ -219,16 +222,26 @@ namespace CobMvc.Client
 
                 if (t.Result.All(i => i.Exception != null))
                 {
+                    var ex = t.Result.First().Exception.GetInnerException();
+
                     //failover
                     //降级 fallback
-                    if (!string.IsNullOrWhiteSpace(desc.FallbackValue))
+                    if (desc.FallbackHandler != null)
+                    {
+                        _logger.LogInformation("使用缺省值处理类返回");
+                        var handler = _fallbackHandlers.GetOrAdd(desc.FallbackHandler, k => Activator.CreateInstance(k) as ICobFallbackHandler);
+
+                        return handler?.GetValue(new CobFallbackHandlerContext { ReturnType = returnType, Exception = ex, ServiceName = desc.ServiceName, Path = desc.Path, Method = method, Parameters = parameters });
+
+                    }
+                    else if (!string.IsNullOrWhiteSpace(desc.FallbackValue))
                     {
                         _logger.LogInformation("使用缺省值返回");
-                        return _scripts.GetOrAdd(desc.FallbackValue.GetHashCode(), k => CSharpScript.EvaluateAsync(desc.FallbackValue).ConfigureAwait(false).GetAwaiter().GetResult());
+                        return _scripts.GetOrAdd(desc.FallbackValue, k => CSharpScript.EvaluateAsync(k).ConfigureAwait(false).GetAwaiter().GetResult());//todo:处理是否为Task
                     }
 
                     //没有缺省值时，抛出异常
-                    throw t.Result.First().Exception.GetInnerException();
+                    throw ex;
                 }
 
                 return t.Result.FirstOrDefault(i => i.Exception == null)?.Result;
@@ -257,7 +270,7 @@ namespace CobMvc.Client
         }
 
         //action重试辅助类
-        private class TaskRetry : IDisposable
+        private class ServiceTaskRetry : IDisposable
         {
             ILogger _logger = null;
             TaskCompletionSource<TaskRetryResult>[] _waiters = null;
@@ -266,7 +279,7 @@ namespace CobMvc.Client
             int _maxTimes = 1;
             HashSet<Type> _exceptionTypes = null;
 
-            public TaskRetry(ILoggerFactory loggerFactory, ICobServiceSelector selector, int times, Type[] exceptionTypes)
+            public ServiceTaskRetry(ILoggerFactory loggerFactory, ICobServiceSelector selector, int times, Type[] exceptionTypes)
             {
                 _logger = loggerFactory.CreateLogger<ServiceExecutionEnv>();
                 _selector = selector;

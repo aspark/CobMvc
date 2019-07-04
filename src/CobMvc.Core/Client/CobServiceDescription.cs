@@ -55,6 +55,11 @@ namespace CobMvc.Core.Client
         public string FallbackValue { get; set; }
 
         /// <summary>
+        /// 失败回退时的处理类
+        /// </summary>
+        public Type FallbackHandler { get; set; }
+
+        /// <summary>
         /// 重试异常
         /// </summary>
         public Type[] RetryExceptionTypes { get; set; }
@@ -103,10 +108,13 @@ namespace CobMvc.Core.Client
             AssignByValidValue(this.RetryTimes, refer.RetryTimes, v => RetryTimes = v);
             AssignByValidValue(this.Timeout, refer.Timeout, v => Timeout = v);
             AssignByValidValue(this.Transport, refer.Transport, v => Transport = v);
-            //AssignByValidValue(this.Formatter, refer.Formatter, v => Formatter = v);
             AssignByValidValue(this.FallbackValue, refer.FallbackValue, v => FallbackValue = v);
+            AssignByValidValue(this.FallbackHandler, refer.FallbackHandler, v => FallbackHandler = v);
+
             if (HasValue(refer.RetryExceptionTypes))
                 this.RetryExceptionTypes = (this.RetryExceptionTypes ?? new Type[0]).Concat(refer.RetryExceptionTypes).ToArray();
+
+            //AssignByValidValue(this.Formatter, refer.Formatter, v => Formatter = v);
 
             return this;
         }
@@ -316,6 +324,7 @@ namespace CobMvc.Core.Client
                 desc.RetryTimes = strategy.Count;
                 desc.RetryExceptionTypes = strategy.Exceptions;
                 desc.FallbackValue = strategy.FallbackValue;
+                desc.FallbackHandler = strategy.FallbackHandler;
 
                 hasConfig = true;
             }

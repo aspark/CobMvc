@@ -71,6 +71,12 @@ namespace CobMvc
 #endif
             }
 
+            //如果没有设置服务名称，则使用程序集作为服务名
+            if(string.IsNullOrWhiteSpace(options.ServiceName))
+            {
+                options.ServiceName = Assembly.GetEntryAssembly().GetName().Name;
+            }
+
             var uri = new Uri(options.ServiceAddress);
 
             var svcInfo = new ServiceInfo

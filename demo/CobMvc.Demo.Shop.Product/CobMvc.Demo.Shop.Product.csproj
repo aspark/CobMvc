@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <UserSecretsId>58ecb3a6-b553-4e1f-9eee-211cd19a5604</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.4.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CobMvc.Consul.Configuration\CobMvc.Consul.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\CobMvc.Consul\CobMvc.Consul.csproj" />
+    <ProjectReference Include="..\..\src\CobMvc.WebSockets\CobMvc.WebSockets.csproj" />
+    <ProjectReference Include="..\..\src\CobMvc\CobMvc.csproj" />
+    <ProjectReference Include="..\CobMvc.Demo.Shop.Contract\CobMvc.Demo.Shop.Contract.csproj" />
+  </ItemGroup>
+
+</Project>

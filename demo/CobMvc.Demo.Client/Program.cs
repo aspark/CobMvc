@@ -11,7 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using CobMvc.WebSockets;
 
-namespace CobMvc.ClientDemo
+namespace CobMvc.Demo.Client
 {
     class Program
     {
