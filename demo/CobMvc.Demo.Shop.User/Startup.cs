@@ -11,6 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using CobMvc;
+using CobMvc.Consul;
+
 namespace CobMvc.Demo.Shop.User
 {
     public class Startup
@@ -26,7 +29,9 @@ namespace CobMvc.Demo.Shop.User
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1).AddCobMvc(cob => {
-
+                cob.AddConsul(config => {
+                    config.Address = new Uri(Configuration.GetValue<string>("Consul:Address"));
+                });
             });
         }
 
@@ -40,10 +45,16 @@ namespace CobMvc.Demo.Shop.User
             else
             {
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
+                //app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
+
+            app.UseCobMvc(opts => {
+                opts.ServiceName = "CobMvc.Demo.Shop.User";
+                //opts.ServiceAddress = "";
+                opts.HealthCheck = "/api/user/check";
+            });
             app.UseMvc();
         }
     }

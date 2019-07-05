@@ -18,7 +18,13 @@ namespace CobMvc.Demo.Shop.Order.Controllers
         {
             _clientFactory = clientFactory;
         }
-        
+
+        [HttpGet]
+        public string Check()
+        {
+            return "on";
+        }
+
         [HttpPost]
         public async Task<ApiResult<OrderDto>> CreateOrder(CreateOrderDto order)
         {

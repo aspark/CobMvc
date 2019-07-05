@@ -19,6 +19,13 @@ namespace CobMvc.Demo.Shop.Product
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration(config => {
+                    config.AddEnvironmentVariables();
+                    //config.AddJsonFile("");
+                }).ConfigureLogging(config => {
+                    config.AddConsole();
+                    config.SetMinimumLevel(LogLevel.Information);
+                })
                 .UseStartup<Startup>();
     }
 }

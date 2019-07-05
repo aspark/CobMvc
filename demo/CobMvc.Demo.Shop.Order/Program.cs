@@ -22,6 +22,9 @@ namespace CobMvc.Demo.Shop.Order
                 .ConfigureAppConfiguration(config => {
                     config.AddEnvironmentVariables();
                     //config.AddJsonFile("");
+                }).ConfigureLogging(config => {
+                    config.AddConsole();
+                    config.SetMinimumLevel(LogLevel.Information);
                 })
                 .UseStartup<Startup>();
     }

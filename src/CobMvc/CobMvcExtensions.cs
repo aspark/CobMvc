@@ -36,6 +36,13 @@ namespace CobMvc
             return mvcBuilder;
         }
 
+        public static IMvcBuilder AddCobMvc(this IMvcBuilder mvcBuilder, Action<CobMvcOptions> options, Action<ICobMvc> setup)
+        {
+            return mvcBuilder.AddCobMvc(cob => {
+                cob.ConfigureOptions(options);
+                setup(cob);
+            });
+        }
 
         public static IMvcBuilder AddCobMvc(this IMvcBuilder mvcBuilder)
         {
@@ -56,11 +63,11 @@ namespace CobMvc
         /// </summary>
         /// <param name="mvcBuilder"></param>
         /// <returns></returns>
-        public static IApplicationBuilder UseCobMvc(this IApplicationBuilder mvcBuilder, Action<CobMvcOptions> optionOverride = null)//
+        public static IApplicationBuilder UseCobMvc(this IApplicationBuilder mvcBuilder, Action<CobMvcOptions> optionsSetup = null)//
         {
             var options = mvcBuilder.ApplicationServices.GetService<IOptions<CobMvcOptions>>().Value;
 
-            optionOverride?.Invoke(options);
+            optionsSetup?.Invoke(options);
 
             if (string.IsNullOrWhiteSpace(options.ServiceAddress))
             {

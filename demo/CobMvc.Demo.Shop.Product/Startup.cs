@@ -11,6 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using CobMvc;
+using CobMvc.Consul;
+
 namespace CobMvc.Demo.Shop.Product
 {
     public class Startup
@@ -25,7 +28,11 @@ namespace CobMvc.Demo.Shop.Product
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1).AddCobMvc(cob => {
+                cob.AddConsul(config => {
+                    config.Address = new Uri(Configuration.GetValue<string>("Consul:Address"));
+                });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -37,10 +44,16 @@ namespace CobMvc.Demo.Shop.Product
             }
             else
             {
-                app.UseHsts();
+                //app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
+
+            app.UseCobMvc(opts => {
+                opts.ServiceName = "CobMvc.Demo.Shop.Product";
+                //opts.ServiceAddress = "";
+                opts.HealthCheck = "/api/product/check";
+            });
             app.UseMvc();
         }
     }

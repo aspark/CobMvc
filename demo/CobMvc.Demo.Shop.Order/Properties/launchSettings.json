@@ -31,7 +31,7 @@
       "commandName": "Project",
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/api/values",
       "environmentVariables": {
-        "Consul_Address": "http://localhost:8500"
+        "Consul__Address": "http://localhost:8500"
       }
     }
   }

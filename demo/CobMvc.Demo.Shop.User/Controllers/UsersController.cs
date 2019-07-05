@@ -11,6 +11,12 @@ namespace CobMvc.Demo.Shop.User.Controllers
     [ApiController]
     public class UsersController : ControllerBase, IUser
     {
+        [HttpGet]
+        public string Check()
+        {
+            return "on";
+        }
+
         // GET api/values
         [HttpGet]
         public Task<ApiResult<Address[]>> GetAddress(int userID)

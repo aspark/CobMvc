@@ -45,10 +45,16 @@ namespace CobMvc.Demo.Shop.Order
             else
             {
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
+                //app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
+
+            app.UseCobMvc(opts=> {
+                opts.ServiceName = "CobMvc.Demo.Shop.Order";
+                //opts.ServiceAddress = "";
+                opts.HealthCheck = "/api/order/check";
+            });
             app.UseMvc();
         }
     }

@@ -1,6 +1,24 @@
 {
-  "ReRoutes": [],
+  "ReRoutes": [
+    {
+      "DownstreamPathTemplate": "/api/values",
+      "DownstreamScheme": "http",
+      "UpstreamPathTemplate": "/api/user/GetAddress",
+      "ServiceName": "downstreamservice",
+      "UpstreamHttpMethod": [ "Get" ]
+    }
+  ],
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost/shop"
+    "BaseUrl": "https://localhost/shop",
+    "LoadBalancerOptions": {
+      "Type": "LeastConnection",
+      "Key": null,
+      "Expiry": 0
+    },
+    "ServiceDiscoveryProvider": {
+      "Host": "localhost",
+      "Port": 8500,
+      "Type": "Consul"
+    }
   }
 }

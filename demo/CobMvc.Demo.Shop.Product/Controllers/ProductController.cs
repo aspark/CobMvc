@@ -12,6 +12,12 @@ namespace CobMvc.Demo.Shop.Product.Controllers
     public class ProductController : ControllerBase, IProduct
     {
         [HttpGet]
+        public string Check()
+        {
+            return "on";
+        }
+
+        [HttpGet]
         public Task<ApiResult<ProductDto[]>> GetProducts()
         {
             return Task.FromResult(ApiResult.Create(new[] {
