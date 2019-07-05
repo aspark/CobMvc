@@ -13,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1.Core", "1.Core", "{C594D2
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2.Extensions", "2.Extensions", "{97C67ED8-304A-459A-9D3D-C5F98121125E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Protobuf", "Csrc\obMvc.Protobuf\CobMvc.Protobuf.csproj", "{238223A2-B212-48BA-9373-44BE8952B3DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Protobuf", "src\obMvc.Protobuf\CobMvc.Protobuf.csproj", "{238223A2-B212-48BA-9373-44BE8952B3DB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Test", "src\CobMvc.Test\CobMvc.Test.csproj", "{247F99A0-02B0-4117-AEB3-DE586FD232F0}"
 EndProject
