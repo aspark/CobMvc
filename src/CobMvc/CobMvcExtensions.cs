@@ -84,7 +84,7 @@ namespace CobMvc
                 Address = uri.ToString(),
                 Name = options.ServiceName,
                 ID = StringHelper.ToMD5(options.ServiceAddress + options.ServiceName),//
-                Port = uri.Port
+                //Port = uri.Port
             };
 
             if(!string.IsNullOrWhiteSpace(options.HealthCheck))

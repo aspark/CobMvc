@@ -1,0 +1,6 @@
+{
+  "ReRoutes": [],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://localhost/shop"
+  }
+}

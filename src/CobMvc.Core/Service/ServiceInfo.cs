@@ -13,9 +13,13 @@ namespace CobMvc.Core.Service
 
         public string Name { get; set; }
 
+        /// <summary>
+        /// 服务根地址
+        /// </summary>
         public string Address { get; set; }
 
-        public int Port { get; set; }
+        //Address包含了所有信息，不需要再单独使用port
+        //public int Port { get; set; }
 
         public ServiceInfoStatus Status { get; set; }
         

@@ -9,7 +9,7 @@ namespace CobMvc.Core
         public string ServiceName { get; set; }
 
         /// <summary>
-        /// 服务地址，
+        /// 服务地址，可带路径，如果使用的是Consul路径部分以Tag的方式处理
         /// </summary>
         public string ServiceAddress { get; set; }
 

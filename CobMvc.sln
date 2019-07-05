@@ -3,52 +3,54 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2046
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Core", "CobMvc.Core\CobMvc.Core.csproj", "{E9804AE9-C0C4-47EF-AF2E-5EE322C87E21}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Core", "src\CobMvc.Core\CobMvc.Core.csproj", "{E9804AE9-C0C4-47EF-AF2E-5EE322C87E21}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc", "CobMvc\CobMvc.csproj", "{1BDB29F8-1104-416D-8ECA-C176319D91EE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc", "src\CobMvc\CobMvc.csproj", "{1BDB29F8-1104-416D-8ECA-C176319D91EE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Consul", "CobMvc.Consul\CobMvc.Consul.csproj", "{3BE5705F-10BA-4155-85FB-4FEC55DE4DF1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Consul", "src\CobMvc.Consul\CobMvc.Consul.csproj", "{3BE5705F-10BA-4155-85FB-4FEC55DE4DF1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1.Core", "1.Core", "{C594D2D8-4690-48C9-AF70-049C50AF701B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2.Extensions", "2.Extensions", "{97C67ED8-304A-459A-9D3D-C5F98121125E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Protobuf", "CobMvc.Protobuf\CobMvc.Protobuf.csproj", "{238223A2-B212-48BA-9373-44BE8952B3DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Protobuf", "Csrc\obMvc.Protobuf\CobMvc.Protobuf.csproj", "{238223A2-B212-48BA-9373-44BE8952B3DB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Test", "CobMvc.Test\CobMvc.Test.csproj", "{247F99A0-02B0-4117-AEB3-DE586FD232F0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Test", "src\CobMvc.Test\CobMvc.Test.csproj", "{247F99A0-02B0-4117-AEB3-DE586FD232F0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Client", "CobMvc.Client\CobMvc.Client.csproj", "{F781D168-4600-4933-AA95-F76E248B28C6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Client", "src\CobMvc.Client\CobMvc.Client.csproj", "{F781D168-4600-4933-AA95-F76E248B28C6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3.Demo", "3.Demo", "{84445325-1C8A-4460-A8AB-0A0418FBDFE8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo", "..\demo\CobMvc.Demo\CobMvc.Demo.csproj", "{4BB81BE5-80FE-48C5-AE14-EAE062566BCF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo", "demo\CobMvc.Demo\CobMvc.Demo.csproj", "{4BB81BE5-80FE-48C5-AE14-EAE062566BCF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Contract", "..\demo\CobMvc.Demo.Contract\CobMvc.Demo.Contract.csproj", "{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Contract", "demo\CobMvc.Demo.Contract\CobMvc.Demo.Contract.csproj", "{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Consul.Configuration", "CobMvc.Consul.Configuration\CobMvc.Consul.Configuration.csproj", "{B3B5145D-5A10-48C4-B915-6E95189E8B90}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Consul.Configuration", "src\CobMvc.Consul.Configuration\CobMvc.Consul.Configuration.csproj", "{B3B5145D-5A10-48C4-B915-6E95189E8B90}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0.Solution", "0.Solution", "{1F5C2C9B-DEC0-45B6-B8CD-97488B47A794}"
 	ProjectSection(SolutionItems) = preProject
-		..\README.md = ..\README.md
+		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.WebSockets", "CobMvc.WebSockets\CobMvc.WebSockets.csproj", "{63A928D3-DFB5-49F1-AFD7-2F373EB88B86}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.WebSockets", "src\CobMvc.WebSockets\CobMvc.WebSockets.csproj", "{63A928D3-DFB5-49F1-AFD7-2F373EB88B86}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.TCloud.Tools", "CobMvc.TCloud.Tools\CobMvc.TCloud.Tools.csproj", "{4B928B3E-CCD2-493E-9AFF-AEF011FFA5E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.TCloud.Tools", "src\CobMvc.TCloud.Tools\CobMvc.TCloud.Tools.csproj", "{4B928B3E-CCD2-493E-9AFF-AEF011FFA5E0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Client", "..\demo\CobMvc.Demo.Client\CobMvc.Demo.Client.csproj", "{CFD09B44-7464-4255-983E-3B45CEC2918A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Client", "demo\CobMvc.Demo.Client\CobMvc.Demo.Client.csproj", "{CFD09B44-7464-4255-983E-3B45CEC2918A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "local", "local", "{67AA9E44-C53A-40BF-926B-4972ECB426DA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{646CB6B9-E44E-44E5-B754-52FC71F2C105}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.User", "..\demo\CobMvc.Demo.Shop.User\CobMvc.Demo.Shop.User.csproj", "{143F7F94-76ED-47D3-B1E8-2887D5D84644}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.User", "demo\CobMvc.Demo.Shop.User\CobMvc.Demo.Shop.User.csproj", "{143F7F94-76ED-47D3-B1E8-2887D5D84644}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Order", "..\demo\CobMvc.Demo.Shop.Order\CobMvc.Demo.Shop.Order.csproj", "{CA702C67-0240-4F1C-A108-B4885345FA64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Order", "demo\CobMvc.Demo.Shop.Order\CobMvc.Demo.Shop.Order.csproj", "{CA702C67-0240-4F1C-A108-B4885345FA64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CobMvc.Demo.Shop.Contract", "..\demo\CobMvc.Demo.Shop.Contract\CobMvc.Demo.Shop.Contract.csproj", "{7FBDA659-A94E-4BFD-996C-9E81AEA65933}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Contract", "demo\CobMvc.Demo.Shop.Contract\CobMvc.Demo.Shop.Contract.csproj", "{7FBDA659-A94E-4BFD-996C-9E81AEA65933}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CobMvc.Demo.Shop.Product", "..\demo\CobMvc.Demo.Shop.Product\CobMvc.Demo.Shop.Product.csproj", "{5F091121-E078-4A14-A0BC-3FC235479376}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Product", "demo\CobMvc.Demo.Shop.Product\CobMvc.Demo.Shop.Product.csproj", "{5F091121-E078-4A14-A0BC-3FC235479376}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.ApiGateway", "demo\CobMvc.Demo.Shop.ApiGateway\CobMvc.Demo.Shop.ApiGateway.csproj", "{57A4599B-2DC0-4B8A-A741-CCE15CAA1D1C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -120,6 +122,10 @@ Global
 		{5F091121-E078-4A14-A0BC-3FC235479376}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F091121-E078-4A14-A0BC-3FC235479376}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F091121-E078-4A14-A0BC-3FC235479376}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57A4599B-2DC0-4B8A-A741-CCE15CAA1D1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57A4599B-2DC0-4B8A-A741-CCE15CAA1D1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57A4599B-2DC0-4B8A-A741-CCE15CAA1D1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57A4599B-2DC0-4B8A-A741-CCE15CAA1D1C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,6 +148,7 @@ Global
 		{CA702C67-0240-4F1C-A108-B4885345FA64} = {646CB6B9-E44E-44E5-B754-52FC71F2C105}
 		{7FBDA659-A94E-4BFD-996C-9E81AEA65933} = {646CB6B9-E44E-44E5-B754-52FC71F2C105}
 		{5F091121-E078-4A14-A0BC-3FC235479376} = {646CB6B9-E44E-44E5-B754-52FC71F2C105}
+		{57A4599B-2DC0-4B8A-A741-CCE15CAA1D1C} = {646CB6B9-E44E-44E5-B754-52FC71F2C105}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {18F7E213-AC3B-4608-8E76-A162E4265FC8}

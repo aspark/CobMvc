@@ -25,18 +25,62 @@ namespace CobMvc.Consul
                 var status = (await _client.Health.State(HealthStatus.Any)).Response.GroupBy(h => h.ServiceID).ToDictionary(g => g.Key, g => new HashSet<HealthStatus>(g.Select(s => s.Status)));
                 foreach (var svc in services.Response.Values)
                 {
-                    items.Add(new ServiceInfo
-                    {
-                        Address = svc.Address,
-                        ID = svc.ID,
-                        Name = svc.Service,
-                        Port = svc.Port,
-                        Status = status.ContainsKey(svc.ID)? IndicateStatus(status[svc.ID]): ServiceInfoStatus.Critical
-                    });
+                    items.Add(CreateServiceInfo(svc.ID, svc.Service, svc.Address, svc.Port, svc.Tags, status));
                 }
             }
 
             return items;
+        }
+
+        public async Task<List<ServiceInfo>> GetByName(string name)
+        {
+            var items = new List<ServiceInfo>();
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var services = await _client.Catalog.Service(name);
+                if (services.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var status = (await _client.Health.State(HealthStatus.Any)).Response.GroupBy(h => h.ServiceID).ToDictionary(g => g.Key, g => new HashSet<HealthStatus>(g.Select(s => s.Status)));
+                    foreach (var svc in services.Response)
+                    {
+                        items.Add(CreateServiceInfo(svc.ServiceID, svc.ServiceName, svc.ServiceAddress, svc.ServicePort, svc.ServiceTags, status));
+                    }
+                }
+            }
+
+            return items;
+        }
+
+        private ServiceInfo CreateServiceInfo(string id, string name, string host, int port, string[] tags, Dictionary<string, HashSet<HealthStatus>> status)
+        {
+            var addr = new UriBuilder(host);
+            if (tags != null && tags.Length > 0)
+            {
+                foreach(var tag in tags)
+                {
+                    if (tag.StartsWith(_prefixScheme))
+                        addr.Scheme = tag.Substring(_prefixScheme.Length);
+                    else if(tag.StartsWith(_prefixAbsolutePath))
+                        addr.Path = tag.Substring(_prefixAbsolutePath.Length);
+                }
+            }
+            else
+            {
+                //设置默认schema
+                addr.Scheme = "http";
+            }
+
+            addr.Port = port;
+
+            var svc = new ServiceInfo
+            {
+                ID = id,
+                Name = name,
+                Address = addr.ToString(),
+                Status = status.ContainsKey(id) ? IndicateStatus(status[id]) : ServiceInfoStatus.Healthy//没有健康检查时，默认为健康
+            };
+
+            return svc;
         }
 
         private ServiceInfoStatus IndicateStatus(HashSet<HealthStatus> set)
@@ -54,42 +98,22 @@ namespace CobMvc.Consul
             return ServiceInfoStatus.Warning;
         }
 
-        public async Task<List<ServiceInfo>> GetByName(string name)
-        {
-            var items = new List<ServiceInfo>();
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                var services = await _client.Catalog.Service(name);
-                if (services.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    var status = (await _client.Health.State(HealthStatus.Any)).Response.GroupBy(h => h.ServiceID).ToDictionary(g => g.Key, g => new HashSet<HealthStatus>(g.Select(s => s.Status)));
-                    foreach (var svc in services.Response)
-                    {
-                        items.Add(new ServiceInfo
-                        {
-                            Address = svc.ServiceAddress,
-                            ID = svc.ServiceID,
-                            Name = svc.ServiceName,
-                            Port = svc.ServicePort,
-                            Status = status.ContainsKey(svc.ServiceID) ? IndicateStatus(status[svc.ServiceID]) : ServiceInfoStatus.Healthy//没有健康检查时，默认为健康
-                        });
-                    }
-                }
-            }
-
-            return items;
-        }
+        private const string _prefixScheme = "Scheme:";
+        private const string _prefixAbsolutePath = "Path:";
 
         public async Task<bool> Register(ServiceInfo entry)
         {
             if(entry != null)
             {
+                var url = new Uri(entry.Address);
+
                 var registration = new AgentServiceRegistration
                 {
-                    Address = entry.Address,
+                    Address = url.Host,
                     ID = entry.ID,
                     Name = entry.Name,
-                    Port = entry.Port
+                    Port = url.Port,
+                    Tags = new[] { $"{_prefixScheme}{url.Scheme}", $"{_prefixAbsolutePath}{url.AbsolutePath}" }
                 };
 
                 //健康检查
