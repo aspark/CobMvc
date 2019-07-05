@@ -28,8 +28,7 @@
       "applicationUrl": "https://localhost:5001;http://localhost:5000"
     },
     "Docker": {
-      "commandName": "Executable",
-      "launchBrowser": true,
+      "commandName": "Project",
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/api/values",
       "environmentVariables": {
         "Consul_Address": "http://localhost:8500"

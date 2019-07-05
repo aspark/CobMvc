@@ -4,11 +4,11 @@ EXPOSE 80
 EXPOSE 443
 
 FROM microsoft/dotnet:2.1-sdk AS build
-WORKDIR /src
-COPY ["../demo/CobMvc.Demo.Shop.User/CobMvc.Demo.Shop.User.csproj", "../demo/CobMvc.Demo.Shop.User/"]
-RUN dotnet restore "../demo/CobMvc.Demo.Shop.User/CobMvc.Demo.Shop.User.csproj"
+WORKDIR /
+COPY ["demo/CobMvc.Demo.Shop.User/CobMvc.Demo.Shop.User.csproj", "demo/CobMvc.Demo.Shop.User/"]
+RUN dotnet restore "demo/CobMvc.Demo.Shop.User/CobMvc.Demo.Shop.User.csproj"
 COPY . .
-WORKDIR "/src/../demo/CobMvc.Demo.Shop.User"
+WORKDIR "demo/CobMvc.Demo.Shop.User"
 RUN dotnet build "CobMvc.Demo.Shop.User.csproj" -c Release -o /app
 
 FROM build AS publish
