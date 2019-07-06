@@ -14,9 +14,7 @@ namespace CobMvc.Demo.Shop.ApiGateway
     {
         public static void Main(string[] args)
         {
-            new WebHostBuilder()
-               .UseKestrel()
-               .UseContentRoot(Directory.GetCurrentDirectory())
+            WebHost.CreateDefaultBuilder(args)
                .ConfigureAppConfiguration((hostingContext, config) =>
                {
                    config
@@ -24,16 +22,14 @@ namespace CobMvc.Demo.Shop.ApiGateway
                        .AddJsonFile("appsettings.json", true, true)
                        .AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json", true, true)
                        .AddJsonFile("ocelot.json")
-                       .AddEnvironmentVariables();
-               })
-               .ConfigureServices(s => {
-                   
+                       .AddEnvironmentVariables()
+                       .AddCommandLine(args);
                })
                .ConfigureLogging((hostingContext, logging) =>
                {
                    logging.AddConsole();
                })
-               .UseIISIntegration()
+               //.UseIISIntegration()
                .UseStartup<Startup>()
                .Build()
                .Run();
