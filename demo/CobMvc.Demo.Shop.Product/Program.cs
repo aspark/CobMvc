@@ -21,6 +21,7 @@ namespace CobMvc.Demo.Shop.Product
             WebHost.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration(config => {
                     config.AddEnvironmentVariables();
+                    config.AddCommandLine(args);
                     //config.AddJsonFile("");
                 }).ConfigureLogging(config => {
                     config.AddConsole();

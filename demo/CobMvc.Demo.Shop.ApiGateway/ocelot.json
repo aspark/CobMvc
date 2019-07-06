@@ -1,15 +1,54 @@
 {
   "ReRoutes": [
     {
-      "DownstreamPathTemplate": "/api/values",
+      "DownstreamPathTemplate": "/api/order/{everything}",
       "DownstreamScheme": "http",
-      "UpstreamPathTemplate": "/api/user/GetAddress",
-      "ServiceName": "downstreamservice",
-      "UpstreamHttpMethod": [ "Get" ]
+      "UpstreamPathTemplate": "/gw/api/order/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "ServiceName": "CobMvc.Demo.Shop.Order"
+    },
+    {
+      "DownstreamPathTemplate": "/api/product/{everything}",
+      "DownstreamScheme": "http",
+      "UpstreamPathTemplate": "/gw/api/product/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "ServiceName": "CobMvc.Demo.Shop.Product"
+    },
+    {
+      "DownstreamPathTemplate": "/api/product/GetProducts",
+      "DownstreamScheme": "http",
+      "UpstreamPathTemplate": "/product",
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "ServiceName": "CobMvc.Demo.Shop.Product",
+      "Key": "product"
+    },
+    {
+      "DownstreamPathTemplate": "/api/users/{everything}",
+      "DownstreamScheme": "http",
+      "UpstreamPathTemplate": "/gw/api/users/{everything}",
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "ServiceName": "CobMvc.Demo.Shop.User"
+    },
+    {
+      "DownstreamPathTemplate": "/api/users/GetAddress?userid={userid}",
+      "DownstreamScheme": "http",
+      "UpstreamPathTemplate": "/user?userid={userid}",
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "ServiceName": "CobMvc.Demo.Shop.User",
+      "Key": "user"
+    }
+  ],
+  "Aggregates": [
+    {
+      "ReRouteKeys": [
+        "user",
+        "product"
+      ],
+      "UpstreamPathTemplate": "/gw/virtual/index?userid={userid}"
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost/shop",
+    "BaseUrl": "https://localhost:5000",
     "LoadBalancerOptions": {
       "Type": "LeastConnection",
       "Key": null,
@@ -18,7 +57,8 @@
     "ServiceDiscoveryProvider": {
       "Host": "localhost",
       "Port": 8500,
-      "Type": "Consul"
+      "Type": "Consul",
+      "PollingInterval": 100
     }
   }
 }

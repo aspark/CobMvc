@@ -31,13 +31,10 @@ namespace CobMvc.Demo.Shop.ApiGateway
                })
                .ConfigureLogging((hostingContext, logging) =>
                {
-                   //add your logging
+                   logging.AddConsole();
                })
                .UseIISIntegration()
-               .Configure(app =>
-               {
-                   
-               })
+               .UseStartup<Startup>()
                .Build()
                .Run();
         }

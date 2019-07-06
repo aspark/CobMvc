@@ -1,0 +1,1 @@
+dotnet.exe ..\CobMvc.Demo.Shop.User\bin\Debug\netcoreapp2.1\CobMvc.Demo.Shop.User.dll --urls="http://localhost:5003" --Consul:Address="http://localhost:8500"

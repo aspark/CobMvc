@@ -72,14 +72,20 @@ namespace CobMvc
             if (string.IsNullOrWhiteSpace(options.ServiceAddress))
             {
                 var addr = mvcBuilder.ServerFeatures.Get<IServerAddressesFeature>();
-                options.ServiceAddress = addr.Addresses.First();
+                if(addr.Addresses.Any())
+                {
+                    options.ServiceAddress = addr.Addresses.First();
 #if !DEBUG
-                options.ServiceAddress = NetHelper.ChangeToExternal(options.ServiceAddress);
+                    options.ServiceAddress = NetHelper.ChangeToExternal(options.ServiceAddress);
 #endif
+                }
             }
 
+            if (string.IsNullOrWhiteSpace(options.ServiceAddress))
+                options.ServiceAddress = "http://localhost:5000";
+
             //如果没有设置服务名称，则使用程序集作为服务名
-            if(string.IsNullOrWhiteSpace(options.ServiceName))
+            if (string.IsNullOrWhiteSpace(options.ServiceName))
             {
                 options.ServiceName = Assembly.GetEntryAssembly().GetName().Name;
             }

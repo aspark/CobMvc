@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2046
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29001.49
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Core", "src\CobMvc.Core\CobMvc.Core.csproj", "{E9804AE9-C0C4-47EF-AF2E-5EE322C87E21}"
 EndProject
@@ -52,7 +52,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.ApiGateway
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Protobuf", "src\CobMvc.Protobuf\CobMvc.Protobuf.csproj", "{E17734B4-5F7E-41CB-B1BC-04E9B0A2F089}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CobMvc.Kubernetes", "src\CobMvc.Kubernetes\CobMvc.Kubernetes.csproj", "{C5B308A8-916E-418C-A5FB-B98F11F4C863}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Kubernetes", "src\CobMvc.Kubernetes\CobMvc.Kubernetes.csproj", "{C5B308A8-916E-418C-A5FB-B98F11F4C863}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CobMvc.Demo.Shop.Starter", "CobMvc.Demo.Shop.Starter", "{4BBD285D-0DEC-4CBA-B954-E02F7AFB7BF1}"
+	ProjectSection(SolutionItems) = preProject
+		demo\CobMvc.Demo.Shop\start api+5000.bat = demo\CobMvc.Demo.Shop\start api+5000.bat
+		demo\CobMvc.Demo.Shop\start order+5001.bat = demo\CobMvc.Demo.Shop\start order+5001.bat
+		demo\CobMvc.Demo.Shop\start order+5011.bat = demo\CobMvc.Demo.Shop\start order+5011.bat
+		demo\CobMvc.Demo.Shop\start produce+5002.bat = demo\CobMvc.Demo.Shop\start produce+5002.bat
+		demo\CobMvc.Demo.Shop\start user+5003.bat = demo\CobMvc.Demo.Shop\start user+5003.bat
+		demo\CobMvc.Demo.Shop.Starter\start user+5013.bat = demo\CobMvc.Demo.Shop.Starter\start user+5013.bat
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -156,6 +166,7 @@ Global
 		{57A4599B-2DC0-4B8A-A741-CCE15CAA1D1C} = {646CB6B9-E44E-44E5-B754-52FC71F2C105}
 		{E17734B4-5F7E-41CB-B1BC-04E9B0A2F089} = {97C67ED8-304A-459A-9D3D-C5F98121125E}
 		{C5B308A8-916E-418C-A5FB-B98F11F4C863} = {97C67ED8-304A-459A-9D3D-C5F98121125E}
+		{4BBD285D-0DEC-4CBA-B954-E02F7AFB7BF1} = {646CB6B9-E44E-44E5-B754-52FC71F2C105}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {18F7E213-AC3B-4608-8E76-A162E4265FC8}

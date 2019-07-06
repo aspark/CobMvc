@@ -31,6 +31,7 @@
       "commandName": "Project",
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/api/values",
       "environmentVariables": {
+        "ASPNETCORE_URLS": "http://localhost:5001",
         "Consul__Address": "http://localhost:8500"
       }
     }

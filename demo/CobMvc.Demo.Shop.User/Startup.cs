@@ -53,7 +53,7 @@ namespace CobMvc.Demo.Shop.User
             app.UseCobMvc(opts => {
                 opts.ServiceName = "CobMvc.Demo.Shop.User";
                 //opts.ServiceAddress = "";
-                opts.HealthCheck = "/api/user/check";
+                opts.HealthCheck = "/api/users/check";
             });
             app.UseMvc();
         }
