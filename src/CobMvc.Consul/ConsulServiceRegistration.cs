@@ -125,7 +125,7 @@ namespace CobMvc.Consul
                             Interval = i.Interval,
                             Timeout = i.Timeout,
                             Status = HealthStatus.Passing,
-                            DeregisterCriticalServiceAfter = TimeSpan.FromMilliseconds(100)
+                            DeregisterCriticalServiceAfter = TimeSpan.FromSeconds(30)
                         };
 
                         switch (i.Type)

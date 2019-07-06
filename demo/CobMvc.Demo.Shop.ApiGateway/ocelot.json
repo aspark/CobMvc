@@ -44,21 +44,19 @@
         "user",
         "product"
       ],
-      "UpstreamPathTemplate": "/gw/virtual/index?userid={userid}"
+      "UpstreamPathTemplate": "/gw/vapi/index?userid={userid}"
     }
   ],
   "GlobalConfiguration": {
     "BaseUrl": "https://localhost:5000",
-    "LoadBalancerOptions": {
-      "Type": "LeastConnection",
-      "Key": null,
-      "Expiry": 0
+    "LoadBalancerOptions": {//LeastConnection
+      "Type": "RoundRobin"
     },
     "ServiceDiscoveryProvider": {
       "Host": "localhost",
       "Port": 8500,
-      "Type": "Consul",
-      "PollingInterval": 100
+      "Type": "PollConsul",
+      "PollingInterval": 1000
     }
   }
 }
