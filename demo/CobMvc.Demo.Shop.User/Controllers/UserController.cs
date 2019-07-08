@@ -9,7 +9,7 @@ namespace CobMvc.Demo.Shop.User.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class UsersController : ControllerBase, IUser
+    public class UserController : ControllerBase, IUser
     {
         [HttpGet]
         public string Check()

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace CobMvc.Demo.Shop.Contract
 {
-    [CobService("CobMvc.Demo.Shop.Product")]
+    [CobService("CobMvc.Demo.Shop.Product", Path = "/api/product")]
     public interface IProduct
     {
         Task<ApiResult<ProductDto[]>> GetProducts();

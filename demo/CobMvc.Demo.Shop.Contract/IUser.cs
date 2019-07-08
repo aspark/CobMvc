@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace CobMvc.Demo.Shop.Contract
 {
-    [CobService("CobMvc.Demo.Shop.User")]
+    [CobService("CobMvc.Demo.Shop.User", Path = "/api/user")]
     public interface IUser
     {
         Task<ApiResult<Address[]>> GetAddress(int userID);

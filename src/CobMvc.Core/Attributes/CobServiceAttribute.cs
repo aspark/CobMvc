@@ -36,10 +36,5 @@ namespace CobMvc.Core
         /// 超时时间（秒）。为0时，不设置
         /// </summary>
         public float Timeout { get; set; }
-
-        /// <summary>
-        /// 从Configuration中加载配置
-        /// </summary>
-        public string FromConfigration { get; set; }
     }
 }

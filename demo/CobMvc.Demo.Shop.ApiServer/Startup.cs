@@ -4,17 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using CobMvc;
 using CobMvc.Consul;
+using Microsoft.Extensions.Configuration;
 
-namespace CobMvc.Demo.Shop.User
+namespace CobMvc.Demo.Shop.ApiServer
 {
     public class Startup
     {
@@ -26,9 +23,10 @@ namespace CobMvc.Demo.Shop.User
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
+        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1).AddCobMvc(cob => {
+            services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_2_1).AddCobMvc(cob => {
                 cob.AddConsul(config => {
                     config.Address = new Uri(Configuration.GetValue<string>("Consul:Address"));
                 });
@@ -42,19 +40,7 @@ namespace CobMvc.Demo.Shop.User
             {
                 app.UseDeveloperExceptionPage();
             }
-            else
-            {
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                //app.UseHsts();
-            }
 
-            //app.UseHttpsRedirection();
-
-            app.UseCobMvc(opts => {
-                opts.ServiceName = "CobMvc.Demo.Shop.User";
-                //opts.ServiceAddress = "";
-                opts.HealthCheck = "/api/user/check";
-            });
             app.UseMvc();
         }
     }

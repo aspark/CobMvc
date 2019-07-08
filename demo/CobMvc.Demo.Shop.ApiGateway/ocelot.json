@@ -23,14 +23,14 @@
       "Key": "product"
     },
     {
-      "DownstreamPathTemplate": "/api/users/{everything}",
+      "DownstreamPathTemplate": "/api/user/{everything}",
       "DownstreamScheme": "http",
-      "UpstreamPathTemplate": "/gw/api/users/{everything}",
+      "UpstreamPathTemplate": "/gw/api/user/{everything}",
       "UpstreamHttpMethod": [ "Get", "Post" ],
       "ServiceName": "CobMvc.Demo.Shop.User"
     },
     {
-      "DownstreamPathTemplate": "/api/users/GetAddress?userid={userid}",
+      "DownstreamPathTemplate": "/api/user/GetAddress?userid={userid}",
       "DownstreamScheme": "http",
       "UpstreamPathTemplate": "/user?userid={userid}",
       "UpstreamHttpMethod": [ "Get", "Post" ],

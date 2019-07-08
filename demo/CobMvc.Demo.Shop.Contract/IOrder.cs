@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace CobMvc.Demo.Shop.Contract
 {
-    [CobService("CobMvc.Demo.Shop.Order")]
+    [CobService("CobMvc.Demo.Shop.Order", Path="/api/order")]
     public interface IOrder
     {
         Task<ApiResult<OrderDto>> CreateOrder(CreateOrderDto order);

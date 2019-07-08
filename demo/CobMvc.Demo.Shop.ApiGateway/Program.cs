@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
+//使有Ocelot实现在的网关
 namespace CobMvc.Demo.Shop.ApiGateway
 {
     public class Program
