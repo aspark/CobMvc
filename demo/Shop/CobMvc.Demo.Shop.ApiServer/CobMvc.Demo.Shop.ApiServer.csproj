@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <UserSecretsId>58ecb3a6-b553-4e1f-9eee-211cd19a5604</UserSecretsId>
+    <UserSecretsId>54cbbe1e-2b16-4ada-a5e9-d491612287c5</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,10 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CobMvc.Consul.Configuration\CobMvc.Consul.Configuration.csproj" />
-    <ProjectReference Include="..\..\src\CobMvc.Consul\CobMvc.Consul.csproj" />
-    <ProjectReference Include="..\..\src\CobMvc.WebSockets\CobMvc.WebSockets.csproj" />
-    <ProjectReference Include="..\..\src\CobMvc\CobMvc.csproj" />
+    <ProjectReference Include="..\..\..\src\CobMvc.Consul\CobMvc.Consul.csproj" />
+    <ProjectReference Include="..\..\..\src\CobMvc\CobMvc.csproj" />
     <ProjectReference Include="..\CobMvc.Demo.Shop.Contract\CobMvc.Demo.Shop.Contract.csproj" />
   </ItemGroup>
 

@@ -19,9 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Client", "src\CobMvc
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3.Demo", "3.Demo", "{84445325-1C8A-4460-A8AB-0A0418FBDFE8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo", "demo\CobMvc.Demo\CobMvc.Demo.csproj", "{4BB81BE5-80FE-48C5-AE14-EAE062566BCF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo", "demo\AllInOne\CobMvc.Demo\CobMvc.Demo.csproj", "{4BB81BE5-80FE-48C5-AE14-EAE062566BCF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Contract", "demo\CobMvc.Demo.Contract\CobMvc.Demo.Contract.csproj", "{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Contract", "demo\AllInOne\CobMvc.Demo.Contract\CobMvc.Demo.Contract.csproj", "{9DDC108F-AD3A-4AC4-BA1D-041BA123FD0E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Consul.Configuration", "src\CobMvc.Consul.Configuration\CobMvc.Consul.Configuration.csproj", "{B3B5145D-5A10-48C4-B915-6E95189E8B90}"
 EndProject
@@ -34,21 +34,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.WebSockets", "src\Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.TCloud.Tools", "src\CobMvc.TCloud.Tools\CobMvc.TCloud.Tools.csproj", "{4B928B3E-CCD2-493E-9AFF-AEF011FFA5E0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Client", "demo\CobMvc.Demo.Client\CobMvc.Demo.Client.csproj", "{CFD09B44-7464-4255-983E-3B45CEC2918A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Client", "demo\AllInOne\CobMvc.Demo.Client\CobMvc.Demo.Client.csproj", "{CFD09B44-7464-4255-983E-3B45CEC2918A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "local", "local", "{67AA9E44-C53A-40BF-926B-4972ECB426DA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{646CB6B9-E44E-44E5-B754-52FC71F2C105}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.User", "demo\CobMvc.Demo.Shop.User\CobMvc.Demo.Shop.User.csproj", "{143F7F94-76ED-47D3-B1E8-2887D5D84644}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.User", "demo\Shop\CobMvc.Demo.Shop.User\CobMvc.Demo.Shop.User.csproj", "{143F7F94-76ED-47D3-B1E8-2887D5D84644}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Order", "demo\CobMvc.Demo.Shop.Order\CobMvc.Demo.Shop.Order.csproj", "{CA702C67-0240-4F1C-A108-B4885345FA64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Order", "demo\Shop\CobMvc.Demo.Shop.Order\CobMvc.Demo.Shop.Order.csproj", "{CA702C67-0240-4F1C-A108-B4885345FA64}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Contract", "demo\CobMvc.Demo.Shop.Contract\CobMvc.Demo.Shop.Contract.csproj", "{7FBDA659-A94E-4BFD-996C-9E81AEA65933}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Contract", "demo\Shop\CobMvc.Demo.Shop.Contract\CobMvc.Demo.Shop.Contract.csproj", "{7FBDA659-A94E-4BFD-996C-9E81AEA65933}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Product", "demo\CobMvc.Demo.Shop.Product\CobMvc.Demo.Shop.Product.csproj", "{5F091121-E078-4A14-A0BC-3FC235479376}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.Product", "demo\Shop\CobMvc.Demo.Shop.Product\CobMvc.Demo.Shop.Product.csproj", "{5F091121-E078-4A14-A0BC-3FC235479376}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.ApiGateway", "demo\CobMvc.Demo.Shop.ApiGateway\CobMvc.Demo.Shop.ApiGateway.csproj", "{57A4599B-2DC0-4B8A-A741-CCE15CAA1D1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Demo.Shop.ApiGateway", "demo\Shop\CobMvc.Demo.Shop.ApiGateway\CobMvc.Demo.Shop.ApiGateway.csproj", "{57A4599B-2DC0-4B8A-A741-CCE15CAA1D1C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Protobuf", "src\CobMvc.Protobuf\CobMvc.Protobuf.csproj", "{E17734B4-5F7E-41CB-B1BC-04E9B0A2F089}"
 EndProject
@@ -56,16 +56,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CobMvc.Kubernetes", "src\Co
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CobMvc.Demo.Shop.Starter", "CobMvc.Demo.Shop.Starter", "{4BBD285D-0DEC-4CBA-B954-E02F7AFB7BF1}"
 	ProjectSection(SolutionItems) = preProject
-		demo\CobMvc.Demo.Shop.Starter\start api(cob)+5000.bat = demo\CobMvc.Demo.Shop.Starter\start api(cob)+5000.bat
-		demo\CobMvc.Demo.Shop\start api+5000.bat = demo\CobMvc.Demo.Shop\start api+5000.bat
-		demo\CobMvc.Demo.Shop\start order+5001.bat = demo\CobMvc.Demo.Shop\start order+5001.bat
-		demo\CobMvc.Demo.Shop\start order+5011.bat = demo\CobMvc.Demo.Shop\start order+5011.bat
-		demo\CobMvc.Demo.Shop\start produce+5002.bat = demo\CobMvc.Demo.Shop\start produce+5002.bat
-		demo\CobMvc.Demo.Shop\start user+5003.bat = demo\CobMvc.Demo.Shop\start user+5003.bat
-		demo\CobMvc.Demo.Shop.Starter\start user+5013.bat = demo\CobMvc.Demo.Shop.Starter\start user+5013.bat
+		demo\Shop\CobMvc.Demo.Shop.Starter\start api(cob)+5000.bat = demo\Shop\CobMvc.Demo.Shop.Starter\start api(cob)+5000.bat
+		demo\Shop\CobMvc.Demo.Shop\start api+5000.bat = demo\Shop\CobMvc.Demo.Shop\start api+5000.bat
+		demo\Shop\CobMvc.Demo.Shop\start order+5001.bat = demo\Shop\CobMvc.Demo.Shop\start order+5001.bat
+		demo\Shop\CobMvc.Demo.Shop\start order+5011.bat = demo\Shop\CobMvc.Demo.Shop\start order+5011.bat
+		demo\Shop\CobMvc.Demo.Shop\start produce+5002.bat = demo\Shop\CobMvc.Demo.Shop\start produce+5002.bat
+		demo\Shop\CobMvc.Demo.Shop\start user+5003.bat = demo\Shop\CobMvc.Demo.Shop\start user+5003.bat
+		demo\Shop\CobMvc.Demo.Shop.Starter\start user+5013.bat = demo\Shop\CobMvc.Demo.Shop.Starter\start user+5013.bat
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CobMvc.Demo.Shop.ApiServer", "demo\CobMvc.Demo.Shop.ApiServer\CobMvc.Demo.Shop.ApiServer.csproj", "{DA4C73FD-9BEE-45E0-971B-58118D796B63}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CobMvc.Demo.Shop.ApiServer", "demo\Shop\CobMvc.Demo.Shop.ApiServer\CobMvc.Demo.Shop.ApiServer.csproj", "{DA4C73FD-9BEE-45E0-971B-58118D796B63}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
