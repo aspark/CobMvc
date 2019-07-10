@@ -22,15 +22,17 @@ namespace CobMvc.Demo.Shop.ApiServer
 
         [HttpGet]
         [Route("/gw/vapi/index")]
-        public async Task<object> Index(int userID)
+        public async Task<object> Index()
         {
-            var user = _clientFactory.GetProxy<IUser>().GetAddress(userID);
+            //var addr = _clientFactory.GetProxy<IUser>().GetAddress(userID);
+            var user = _clientFactory.GetProxy<IUser>().GetUserInfo();
             var product = _clientFactory.GetProxy<IProduct>().GetProducts();
 
             await Task.WhenAll(user, product);
 
             return new {
-                user = user.Result, 
+                //addr = addr.Result, 
+                user = user,
                 product = product.Result
             };
         }

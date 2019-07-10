@@ -32,7 +32,15 @@
     {
       "DownstreamPathTemplate": "/api/user/GetAddress?userid={userid}",
       "DownstreamScheme": "http",
-      "UpstreamPathTemplate": "/user?userid={userid}",
+      "UpstreamPathTemplate": "/addr?userid={userid}",
+      "UpstreamHttpMethod": [ "Get", "Post" ],
+      "ServiceName": "CobMvc.Demo.Shop.User",
+      "Key": "addr"
+    },
+    {
+      "DownstreamPathTemplate": "/api/user/GetUserInfo",
+      "DownstreamScheme": "http",
+      "UpstreamPathTemplate": "/user",
       "UpstreamHttpMethod": [ "Get", "Post" ],
       "ServiceName": "CobMvc.Demo.Shop.User",
       "Key": "user"
@@ -41,10 +49,10 @@
   "Aggregates": [
     {
       "ReRouteKeys": [
-        "user",
+        "user", //addr
         "product"
       ],
-      "UpstreamPathTemplate": "/gw/vapi/index?userid={userid}"
+      "UpstreamPathTemplate": "/gw/vapi/index" //?userid={userid}
     }
   ],
   "GlobalConfiguration": {

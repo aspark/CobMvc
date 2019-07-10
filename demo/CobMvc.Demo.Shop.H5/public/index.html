@@ -5,12 +5,31 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+    <link rel="stylesheet" type="text/css" href="<%= BASE_URL %>css/bootstrap.css"></style>
+    <script src="<%= BASE_URL %>js/jquery-3.4.1.js"></script>
+    <script src="<%= BASE_URL %>js/bootstrap.js"></script>
     <title>h5</title>
   </head>
   <body>
     <noscript>
       <strong>We're sorry but h5 doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
+    <div>
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <b class="navbar-brand" href="#">CobMvc</b>
+        <div class="navbar-collapse ">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+              <a class="nav-link" href="/">Shop Demo</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="http://www.github.com/aspark/cobmvc" target="_blank">Docucment</a>
+            </li>
+            <li class="nav-item"><a href="#" class="nav-link">About</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
     <div id="app"></div>
     <!-- built files will be auto injected -->
   </body>

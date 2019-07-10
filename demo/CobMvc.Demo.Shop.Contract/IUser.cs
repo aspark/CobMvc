@@ -7,7 +7,18 @@ namespace CobMvc.Demo.Shop.Contract
     [CobService("CobMvc.Demo.Shop.User", Path = "/api/user")]
     public interface IUser
     {
-        Task<ApiResult<Address[]>> GetAddress(int userID);
+        Task<ApiResult<UserInfo>> GetUserInfo();
+
+        Task<ApiResult<Address[]>> GetAddress(Guid userID);
+    }
+
+    public class UserInfo
+    {
+        public Guid ID { get; set; } = Guid.NewGuid();
+
+        public string Name { get; set; }
+
+        public Address[] Address { get; set; }
     }
 
     public class Address

@@ -21,20 +21,22 @@ namespace CobMvc.Demo.Shop.Product.Controllers
         public Task<ApiResult<ProductDto[]>> GetProducts()
         {
             return Task.FromResult(ApiResult.Create(new[] {
-                new ProductDto{ Name="商品1", Desc="不可描述" },
-                new ProductDto{ Name="商品2", Desc="不可描述" },
-                new ProductDto{ Name="商品3", Desc="不可描述" },
-                new ProductDto{ Name="商品4", Desc="不可描述" },
-                new ProductDto{ Name="商品5", Desc="不可描述" },
-                new ProductDto{ Name="商品6", Desc="不可描述" },
-                new ProductDto{ Name="商品7", Desc="不可描述" },
+                new ProductDto{ Name="商品1", Desc="不知道怎么描述" },
+                new ProductDto{ Name="商品2", Desc="不知道怎么描述" },
+                new ProductDto{ Name="商品3", Desc="不知道怎么描述" },
+                new ProductDto{ Name="商品4", Desc="不知道怎么描述" },
+                new ProductDto{ Name="商品5", Desc="不知道怎么描述" },
+                new ProductDto{ Name="商品6", Desc="不知道怎么描述" },
+                new ProductDto{ Name="商品7", Desc="不知道怎么描述" },
             }));
         }
 
+        //private Random _rnd = new Random(Guid.NewGuid().GetHashCode());
+        private static int _checkCount = 0;
         [HttpGet]
         public Task<ApiResult<bool>> CheckStock(Guid productID)
         {
-            return Task.FromResult(ApiResult.Create(true));
+            return Task.FromResult(ApiResult.Create(_checkCount++ % 4 != 0));
         }
     }
 }

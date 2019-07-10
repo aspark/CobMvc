@@ -17,9 +17,22 @@ namespace CobMvc.Demo.Shop.User.Controllers
             return "on";
         }
 
-        // GET api/values
+
         [HttpGet]
-        public Task<ApiResult<Address[]>> GetAddress(int userID)
+        public async Task<ApiResult<UserInfo>> GetUserInfo()
+        {
+            var user = new UserInfo()
+            {
+                Name = "张三"
+            };
+
+            user.Address = (await GetAddress(user.ID)).Data;
+
+            return ApiResult.Create(user);
+        }
+
+        [HttpGet]
+        public Task<ApiResult<Address[]>> GetAddress(Guid userID)
         {
             return Task.FromResult(ApiResult.Create(new[]{
                 new Address()
