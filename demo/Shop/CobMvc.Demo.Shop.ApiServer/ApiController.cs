@@ -32,7 +32,7 @@ namespace CobMvc.Demo.Shop.ApiServer
 
             return new {
                 //addr = addr.Result, 
-                user = user,
+                user = user.Result,
                 product = product.Result
             };
         }

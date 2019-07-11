@@ -20,7 +20,7 @@
         </div>
       </div>
     </div>
-    <Dialog id="dlgAddr" title="选择地址" :showFooter="true" :onConfirm="confirmOrder">
+    <Dialog id="dlgAddr" title="选择地址" :showFooter="true" :onConfirm="confirmOrder" v-if="model && model.user">
       <AddressList :items="model.user.data.address" ref="addr"></AddressList>
     </Dialog>
   </div>
@@ -47,11 +47,7 @@ export default {
     }
   },
   mounted(){
-    Vue.axios.get('/gw/vapi/index', {
-      params:{
-        userID:0
-        }
-      }).then(r=>{
+    Vue.axios.get('/gw/vapi/index').then(r=>{
         this.model = r.data;
     });
   },
