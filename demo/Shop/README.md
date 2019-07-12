@@ -9,7 +9,7 @@ ShopDemo只是简单的演示了前台系统，不包含后台管理系统、数
 ![shop demo 组件图](https://raw.githubusercontent.com/aspark/CobMvc/master/tutorials/Images/shop-components.png)  
 
 
-因各微服务之间存在调用关系，所以使用接口将其抽象，以方便程序中使用强类型调用，并通过接口配置服务名和调用策略。设计类图如下：  
+因各微服务之间存在调用关系，所以使用接口将其抽象，以方便程序中使用强类型调用，并通过接口配置服务名和调用策略。设计类图如下：   
 ![shop demo 类图](https://raw.githubusercontent.com/aspark/CobMvc/master/tutorials/Images/shop-class.png)
 
 
@@ -33,12 +33,12 @@ ShopDemo只是简单的演示了前台系统，不包含后台管理系统、数
 
 > ocelot网关中`/gw/vapi/index`接口是通过配置将用户管理和商品管理两个接口合二为一，示例中没有额外配置ocelot异常服务处理，所以有存在30s异常切换时间
 
-4. 所有服务启动成功后，访问 http://localhost:5000/gw/vapi/index 会返回合并后的`json`，Consul中的服务注册列表如下：
+4. 所有服务启动成功后，访问 http://localhost:5000/gw/vapi/index 会返回合并后的`json`，Consul中的服务注册列表如下：  
 ![shope demo 部署图](https://raw.githubusercontent.com/aspark/CobMvc/master/tutorials/Images/shop-services.png)
 
 
 5. 前端Vuejs项目放置于`\demo\Shop\CobMvc.Demo.Shop.H5`中，使用`npm install`还原所有包后，执行`npm run serve`启动服务（开发模式）
-6. 最后访问`http://localhost:8082/`即可开始使用：
+6. 最后访问`http://localhost:8082/`即可开始使用：  
 ![shop demo效果](https://raw.githubusercontent.com/aspark/CobMvc/master/tutorials/Images/shop.gif)
 
 ## 实现
@@ -88,13 +88,13 @@ services.AddMvc().AddCobMvc(cob => {
 
 4. 使用`docker images`查看镜像名为`product`/`94c244670461`
 
-5. 使用`docker run -it -e "Consul__Address=http://172.17.0.2:8500" 94c244670461`配置Consul并执行`CobMvc.Demo.Shop.Product`服务，成功后显示如下：
+5. 使用`docker run -it -e "Consul__Address=http://172.17.0.2:8500" 94c244670461`配置Consul并执行`CobMvc.Demo.Shop.Product`服务，成功后显示如下：  
 ![shop demo product服务](https://raw.githubusercontent.com/aspark/CobMvc/dev/tutorials/Images/shop-docker-run-product.png)
 
-6. 使用`curl http://172.17.0.5/api/product/GetProducts` 检查是否运行成功 因hyperV下无法ssh linux vm，以下为在alpine容器中使用wget的测试结果：
+6. 使用`curl http://172.17.0.5/api/product/GetProducts` 检查是否运行成功 因hyperV下无法ssh linux vm，以下为在alpine容器中使用wget的测试结果：  
 ![shop demo product api](https://raw.githubusercontent.com/aspark/CobMvc/dev/tutorials/Images/shop-docker-run-product-api.png)
 
-7. 使用 `curl http://172.17.0.2:8500/v1/agent/services`查看Consul中注册的服务如下：
+7. 使用 `curl http://172.17.0.2:8500/v1/agent/services`查看Consul中注册的服务如下：  
 ![shop demo product api](https://raw.githubusercontent.com/aspark/CobMvc/dev/tutorials/Images/shop-docker-run-consul-services.png)
 
 
