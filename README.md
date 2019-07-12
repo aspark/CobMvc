@@ -157,3 +157,14 @@ builder.ConfigureAppConfiguration(b=> {
 
 ### 统一日志
 > todo
+ 
+---
+
+## 其它
+1. `CobMvc.Client`库也可以调用其它非CobMvc的restful api服务使用
+
+---
+
+## 示例
+1. `/demo/AllInOne`中的示例为所有技术点的验证示例
+2. `/demo/Shop`中是比较完整的系统示例，[查看](https://github.com/aspark/CobMvc/tree/dev/demo/Shop)
