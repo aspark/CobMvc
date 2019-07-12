@@ -74,10 +74,28 @@ services.AddMvc().AddCobMvc(cob => {
 ```
 
 ## Docker
-`dock build -f demo/shop/CobMvc.Demo.Shop.ApiGateway/Dockerfile ./`
-`dock run -it -d xxx `//可通过环境变量设置监听IP:端口，还有Consul地址也可这样传递
+1. 拉取Consul镜像 `docker pull consul:latest`
 
+2. 运行Consul `docker run -d --name=dev-consul -e CONSUL_BIND_INTERFACE=eth0 consul`
+
+> 以下命令在CobMvc根目录下执行,以`CobMvc.Demo.Shop.Product`为例
+
+3. 使用`docker build -t product -f demo/shop/CobMvc.Demo.Shop.Product/Dockerfile ./`编译镜像
+
+4. 使用`docker images`查看镜像名为`product`/`94c244670461`
+
+5. 使用`docker run -it -e "Consul__Address=http://172.17.0.2:8500" 94c244670461`配置Consul并执行`CobMvc.Demo.Shop.Product`服务，成功后显示如下：
+![shop demo product服务](https://raw.githubusercontent.com/aspark/CobMvc/dev/tutorials/Images/shop-docker-run-product.png)
+
+6. 使用`curl http://172.17.0.5/api/product/GetProducts` 检查是否运行成功 因hyperV下无法ssh linux vm，以下为在alpine容器中使用wget的测试结果：
+![shop demo product api](https://raw.githubusercontent.com/aspark/CobMvc/dev/tutorials/Images/shop-docker-run-product-api.png)
+
+7. 使用 `curl http://172.17.0.2:8500/v1/agent/services`查看Consul中注册的服务如下：
+![shop demo product api](https://raw.githubusercontent.com/aspark/CobMvc/dev/tutorials/Images/shop-docker-run-consul-services.png)
+
+
+> 运行网关等其它服务与上面方法的类似，docker网络置配以实际环境为准
 
 ## Kubernates
 
-> //todo: 基于上面Docker的使用，添加Pod和service暴露网关。并以NameService替换Consul
+> //todo: 基于上面Docker的使用，添加Pod和service暴露网关。后续可以引用`CobMvc.Kubernetes`包使用NameService替换Consul

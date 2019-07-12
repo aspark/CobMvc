@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace CobMvc.Core.Common
 {
@@ -25,7 +26,7 @@ namespace CobMvc.Core.Common
             }
         }
 
-        public static IPAddress CetCurrentIP()
+        public static IPAddress GetCurrentIP()
         {
             var addrList = Dns.GetHostEntry(Dns.GetHostName()).AddressList.Where(a => !IPAddress.IsLoopback(a));
 
@@ -36,7 +37,7 @@ namespace CobMvc.Core.Common
             return addr;
         }
 
-        private static HashSet<string> _loopback = new HashSet<string> { "127.0.0.1", "localhost", "0.0.0.0", "*", "::1" };
+        private static HashSet<string> _loopback = new HashSet<string> { "127.0.0.1", "localhost", "0.0.0.0", "*", "::1", "+" };
         public static bool IsLoopBack(string host)
         {
             return _loopback.Contains(host);
@@ -52,16 +53,32 @@ namespace CobMvc.Core.Common
             if (string.IsNullOrWhiteSpace(url))
                 return url;
 
-            var uri = new Uri(url);
-
-            if(IsLoopBack(uri.Host))
+            var m = Regex.Match(url, @"\:\/\/(?<h>[^\:\/\\]+)");
+            if (m.Success)
             {
-                var builder = new UriBuilder(uri);
-                builder.Host = NetHelper.CetCurrentIP()?.ToString() ?? uri.Host;
-                uri = builder.Uri;
+                var host = m.Groups["h"].Value;
+                if (IsLoopBack(host))
+                {
+                    var ip = NetHelper.GetCurrentIP();
+                    if (ip != null)
+                    {
+                        url = url.Replace(host, ip?.ToString());
+                    }
+                }
             }
 
-            return uri.ToString();
+            return url;
+
+            //var uri = new Uri(url);
+
+            //if(IsLoopBack(uri.Host))
+            //{
+            //    var builder = new UriBuilder(uri);
+            //    builder.Host = NetHelper.GetCurrentIP()?.ToString() ?? uri.Host;
+            //    uri = builder.Uri;
+            //}
+
+            //return uri.ToString();
         }
     }
 }

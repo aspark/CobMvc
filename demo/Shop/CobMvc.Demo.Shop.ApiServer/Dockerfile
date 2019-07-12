@@ -5,10 +5,10 @@ EXPOSE 443
 
 FROM microsoft/dotnet:2.1-sdk AS build
 WORKDIR /
-COPY ["demo/shop/CobMvc.Demo.Shop.ApiServer/CobMvc.Demo.Shop.ApiServer.csproj", "demo/shop/CobMvc.Demo.Shop.ApiServer/"]
-RUN dotnet restore "demo/shop/CobMvc.Demo.Shop.ApiServer/CobMvc.Demo.Shop.ApiServer.csproj"
+COPY ["demo/Shop/CobMvc.Demo.Shop.ApiServer/CobMvc.Demo.Shop.ApiServer.csproj", "demo/Shop/CobMvc.Demo.Shop.ApiServer/"]
+RUN dotnet restore "demo/Shop/CobMvc.Demo.Shop.ApiServer/CobMvc.Demo.Shop.ApiServer.csproj"
 COPY . .
-WORKDIR "demo/shop/CobMvc.Demo.Shop.ApiServer"
+WORKDIR "demo/Shop/CobMvc.Demo.Shop.ApiServer"
 RUN dotnet build "CobMvc.Demo.Shop.ApiServer.csproj" -c Release -o /app
 
 FROM build AS publish
