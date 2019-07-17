@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
@@ -18,6 +19,12 @@ namespace CobMvc.Client
         HttpClient _client = null;
         ICobMvcContextAccessor _contextAccessor = null;
         ILogger<HttpClientCobRequest> _logger = null;
+
+        static HttpClientCobRequest()
+        {
+            if (ServicePointManager.DefaultConnectionLimit < 100)//默认将链接数加到100
+                ServicePointManager.DefaultConnectionLimit = 100;
+        }
 
         public HttpClientCobRequest(ICobMvcContextAccessor contextAccessor, ILogger<HttpClientCobRequest> logger)
         {
