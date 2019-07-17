@@ -75,8 +75,10 @@ namespace CobMvc
                 if(addr.Addresses.Any())
                 {
                     options.ServiceAddress = addr.Addresses.First();
+                    Console.WriteLine($"use addr:{options.ServiceAddress} from server feature");
 #if !DEBUG
                     options.ServiceAddress = NetHelper.ChangeToExternal(options.ServiceAddress);
+                    Console.WriteLine($"convert addr to external: {options.ServiceAddress}");
 #endif
                 }
             }
