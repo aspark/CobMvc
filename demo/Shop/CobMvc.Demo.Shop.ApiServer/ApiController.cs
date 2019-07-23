@@ -38,8 +38,8 @@ namespace CobMvc.Demo.Shop.ApiServer
         }
 
         [HttpPost]
-        [Route("/api/order/CreateOrder")]
-        public async Task<object> CreateOrder(CreateOrderDto order)
+        [Route("/gw/api/order/CreateOrder")]
+        public async Task<object> CreateOrder([FromBody]CreateOrderDto order)
         {
             var result = await _clientFactory.GetProxy<IOrder>().CreateOrder(order);
 

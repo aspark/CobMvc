@@ -26,7 +26,7 @@ namespace CobMvc.Demo.Shop.Order.Controllers
         }
 
         [HttpPost]
-        public async Task<ApiResult<OrderDto>> CreateOrder(CreateOrderDto order)
+        public async Task<ApiResult<OrderDto>> CreateOrder([FromBody]CreateOrderDto order)
         {
             foreach(var item in order.Details)
             {

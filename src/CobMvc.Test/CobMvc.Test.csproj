@@ -12,4 +12,16 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CobMvc.Client\CobMvc.Client.csproj" />
+    <ProjectReference Include="..\CobMvc.Consul.Configuration\CobMvc.Consul.Configuration.csproj" />
+    <ProjectReference Include="..\CobMvc.Consul\CobMvc.Consul.csproj" />
+    <ProjectReference Include="..\CobMvc.Core\CobMvc.Core.csproj" />
+    <ProjectReference Include="..\CobMvc.Kubernetes\CobMvc.Kubernetes.csproj" />
+    <ProjectReference Include="..\CobMvc.Protobuf\CobMvc.Protobuf.csproj" />
+    <ProjectReference Include="..\CobMvc.TCloud.Tools\CobMvc.TCloud.Tools.csproj" />
+    <ProjectReference Include="..\CobMvc.WebSockets\CobMvc.WebSockets.csproj" />
+    <ProjectReference Include="..\CobMvc\CobMvc.csproj" />
+  </ItemGroup>
+
 </Project>

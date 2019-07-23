@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
@@ -18,6 +19,12 @@ namespace CobMvc.Client
         HttpClient _client = null;
         ICobMvcContextAccessor _contextAccessor = null;
         ILogger<HttpClientCobRequest> _logger = null;
+
+        static HttpClientCobRequest()
+        {
+            if (ServicePointManager.DefaultConnectionLimit < 100)//默认将链接数加到100
+                ServicePointManager.DefaultConnectionLimit = 100;
+        }
 
         public HttpClientCobRequest(ICobMvcContextAccessor contextAccessor, ILogger<HttpClientCobRequest> logger)
         {
@@ -82,9 +89,16 @@ namespace CobMvc.Client
 
             var msg = new HttpRequestMessage(method, url);
 
-            if (passViaBody)
+            if (passViaBody && context.Parameters != null)
             {
-                msg.Content = new StringContent(JsonConvert.SerializeObject(context.Parameters), Encoding.UTF8, "application/json");
+                if (context.Parameters.Count == 1)
+                {
+                    msg.Content = new StringContent(JsonConvert.SerializeObject(context.Parameters.First().Value), Encoding.UTF8, "application/json");
+                }
+                else
+                {
+                    msg.Content = new StringContent(JsonConvert.SerializeObject(context.Parameters), Encoding.UTF8, "application/json");
+                }
             }
 
             //添加traceid等
