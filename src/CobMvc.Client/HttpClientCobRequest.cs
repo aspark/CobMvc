@@ -89,9 +89,16 @@ namespace CobMvc.Client
 
             var msg = new HttpRequestMessage(method, url);
 
-            if (passViaBody)
+            if (passViaBody && context.Parameters != null)
             {
-                msg.Content = new StringContent(JsonConvert.SerializeObject(context.Parameters), Encoding.UTF8, "application/json");
+                if (context.Parameters.Count == 1)
+                {
+                    msg.Content = new StringContent(JsonConvert.SerializeObject(context.Parameters.First().Value), Encoding.UTF8, "application/json");
+                }
+                else
+                {
+                    msg.Content = new StringContent(JsonConvert.SerializeObject(context.Parameters), Encoding.UTF8, "application/json");
+                }
             }
 
             //添加traceid等
