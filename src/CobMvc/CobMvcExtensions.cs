@@ -49,7 +49,7 @@ namespace CobMvc
             return mvcBuilder.AddCobMvc(cob=> { });
         }
 
-        //public static IApplicationBuilder UseCobMvc<T>(this IApplicationBuilder mvcBuilder, Action<CobMvcStartupOptions> optionSetup = null)//, Action<CobMvcOptions> option
+        //public static IApplicationBuilder UseCobMvc<T>(this IApplicationBuilder mvcBuilder, Action<CobMvcStartupOptions> optionSetup = null)
         //{
         //    return mvcBuilder.UseCobMvc(opt=>
         //    {
