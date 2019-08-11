@@ -6,5 +6,6 @@ namespace CobMvc
 {
     internal class CobMvcParametersBinder//: HttpParameterBinding
     {
+        //Microsoft.AspNetCore.Mvc.ModelBinding.IValueProvider
     }
 }

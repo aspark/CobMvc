@@ -11,5 +11,7 @@ namespace CobMvc.Core
         private const string HeaderPrefix = "x-cobmvc-";
 
         public const string HeaderTraceID = HeaderPrefix + "traceid";
+
+        public const string HeaderJump = HeaderPrefix + "jump";
     }
 }

@@ -10,19 +10,32 @@ namespace CobMvc
 {
     internal class CobMvcMiddleware : IMiddleware
     {
+        CobMvcOptions _options = null;
         ICobMvcContextAccessor _contextAccessor = null;
         ILogger<CobMvcMiddleware> _logger = null;
 
-        public CobMvcMiddleware(ICobMvcContextAccessor contextAccessor, ILogger<CobMvcMiddleware> logger)
+        public CobMvcMiddleware(CobMvcOptions options, ICobMvcContextAccessor contextAccessor, ILogger<CobMvcMiddleware> logger)
         {
+            _options = options;
             _logger = logger;
             _contextAccessor = contextAccessor;
         }
 
         public Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
+            //最长链路限制
+            var jump = 0;
+            if (context.Request.Headers.ContainsKey(CobMvcDefaults.HeaderJump))
+            {
+                jump = int.Parse(context.Request.Headers[CobMvcDefaults.HeaderJump]);
+            }
 
-            //todo:最长链路限制
+            if (jump > _options.MaxJump)
+            {
+                throw new Exception($"exceed max jump:{_options.MaxJump}");
+            }
+
+            _contextAccessor.Current.Jump = jump;
 
             //为所有进入的请求添加TraceID等信息
             Guid traceID;
