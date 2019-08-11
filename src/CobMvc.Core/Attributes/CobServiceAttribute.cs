@@ -23,6 +23,11 @@ namespace CobMvc.Core
         public string ServiceName { get; set; }
 
         /// <summary>
+        /// 将服务名替换为服务发现中的Host，默认为true。如需使用sidecar等代理模式请设置为false；暂只支持http/https
+        /// </summary>
+        public bool ResolveServiceName { get; set; } = true;
+
+        /// <summary>
         /// 调用路径
         /// </summary>
         public string Path { get; set; }

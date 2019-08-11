@@ -65,15 +65,27 @@ namespace CobMvc.Demo.Controllers
         }
 
         [HttpPost]
-        public Task SaveUserInfo(UserInfo user)
+        public Task SaveUserInfo(int operatorID, [FromBody]UserInfo user)
         {
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");
 
-            Console.WriteLine($"{time}\t{_cobmvcContextAccessor.Current.TraceID}\tinvoke SaveUserInfo:{JsonConvert.SerializeObject(user)}");
+            Console.WriteLine($"{time}\t{_cobmvcContextAccessor.Current.TraceID}\tinvoke SaveUserInfo:{operatorID}\t{JsonConvert.SerializeObject(user)}");
 
             user.Addr = time;
 
             return Task.FromResult(user);
+        }
+
+        [HttpPost]
+        public Task SaveUserInfo2(int operatorID, UserInfo user1, [FromQuery]UserInfo user2)
+        {
+            var time = DateTime.Now.ToString("HH:mm:ss.ffff");
+
+            Console.WriteLine($"{time}\t{_cobmvcContextAccessor.Current.TraceID}\tinvoke SaveUserInfo2:{operatorID}\t{JsonConvert.SerializeObject(user1)}\t{JsonConvert.SerializeObject(user2)}");
+
+            user1.Addr = user2.Addr = time;
+
+            return Task.FromResult(user1);
         }
 
         [HttpGet]

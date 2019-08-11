@@ -44,6 +44,7 @@ namespace CobMvc.Client
                         builder.SetMinimumLevel(LogLevel.Trace);
                     });
             }
+
             services.TryAddSingleton<IServiceRegistration, InMemoryServiceRegistration>();
             services.TryAddSingleton<ICobClientFactory, CobClientProxyFactory>();
             services.AddSingleton<ICobRequest, HttpClientCobRequest>();

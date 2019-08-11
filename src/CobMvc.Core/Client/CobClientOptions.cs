@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CobMvc.Core.Client
 {
-    public class CobClientOptions
+    public class CobClientOptions: CobMvcRequestOptions
     {
         
     }

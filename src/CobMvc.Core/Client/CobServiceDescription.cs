@@ -12,7 +12,7 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 通用服务调用描述
     /// </summary>
-    public class CobServiceDescription// : ICloneable
+    public abstract class CobServiceDescription// : ICloneable
     {
         public CobServiceDescription()
         {
@@ -23,6 +23,11 @@ namespace CobMvc.Core.Client
         /// 服务名
         /// </summary>
         public string ServiceName { get; set; }
+
+        /// <summary>
+        /// 将服务名替换为服务发现中的Host，默认为true。如需使用sidecar等代理模式请设置为false
+        /// </summary>
+        public bool ResolveServiceName { get; set; } = true;
 
         /// <summary>
         /// 访问路径
@@ -64,6 +69,35 @@ namespace CobMvc.Core.Client
         /// </summary>
         public Type[] RetryExceptionTypes { get; set; }
 
+
+        private static ConcurrentDictionary<string, string> _serviceNameAddr = new ConcurrentDictionary<string, string>();
+        protected string ResolveAddress(ServiceInfo service)
+        {
+            if(!ResolveServiceName)
+            {
+                if(!string.Equals(Transport, CobRequestTransports.Http, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    throw new Exception("ResolveServiceName noly support http/https transport");
+                }
+
+                return _serviceNameAddr.GetOrAdd(service.Name, k => {
+                    var builder = new UriBuilder(service.Address);
+
+                    //去除host port等信息
+                    builder.Host = service.Address;
+
+                    if(string.Equals(builder.Scheme, "https", StringComparison.InvariantCultureIgnoreCase))
+                        builder.Port = 443;
+                    else
+                        builder.Port = 80;
+
+                    return builder.Uri.ToString();
+                });
+            }
+
+            return service.Address;
+        }
+
         /// <summary>
         /// 根据服务获取调用的地址
         /// </summary>
@@ -72,7 +106,7 @@ namespace CobMvc.Core.Client
         /// <returns></returns>
         public virtual string GetUrl(ServiceInfo service, string action)
         {
-            return GetUrl(service.Address, Path, action);//?.ToString() ?? ""
+            return GetUrl(ResolveAddress(service), Path, action);//?.ToString() ?? ""
         }
 
         protected string GetUrl(params string[] paths)
@@ -219,7 +253,9 @@ namespace CobMvc.Core.Client
         
         public string GetUrl(ServiceInfo service)
         {
-            return !string.IsNullOrWhiteSpace(Path) ? base.GetUrl(service.Address, Path) : Parent.GetUrl(service, Method.Name);
+            var url = !string.IsNullOrWhiteSpace(Path) ? base.GetUrl(ResolveAddress(service), Path) : Parent.GetUrl(service, Method.Name);
+
+            return url;
         }
 
         public override string GetUrl(ServiceInfo service, string action)//忽略action
@@ -308,6 +344,7 @@ namespace CobMvc.Core.Client
                 var service = attr as CobServiceAttribute;
 
                 desc.ServiceName = service.ServiceName;
+                desc.ResolveServiceName = service.ResolveServiceName;
                 desc.Path = service.Path;
                 desc.Transport = service.Transport;
                 desc.Timeout = service.Timeout > 0 ? TimeSpan.FromSeconds(service.Timeout) : TimeSpan.FromSeconds(30);//todo:超时可配置

@@ -20,7 +20,7 @@ namespace CobMvc.Core
             _services.TryAddSingleton<ICobServiceDescriptorGenerator, CobServiceDescriptorGenerator>();
             _services.TryAddSingleton<ICobMvcContextAccessor, CobMvcContextAccessor>();
             _services.AddOptions<CobMvcOptions>();
-
+            //services.AddOptions<CobMvcHttpOptions>();
         }
 
         private IServiceCollection _services = null;

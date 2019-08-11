@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CobMvc.Demo.Contract
 {
-    [CobService("CobMvcDemo", Path ="/api/test/", Transport = CobRequestTransports.WebSocket, Timeout = 1)]
+    [CobService("CobMvcDemo", Path ="/api/test/")]//, Timeout = 1, Transport = CobRequestTransports.WebSocket
     [CobRetryStrategy(Count = 5, Exceptions = new[] { typeof(TimeoutException), typeof(Exception) })]
     public interface IDemo
     {
@@ -21,7 +21,10 @@ namespace CobMvc.Demo.Contract
         Task<UserInfo> GetUserInfo(string name);
 
         //
-        Task SaveUserInfo(UserInfo user);
+        Task SaveUserInfo(int operatorID, UserInfo user);
+
+        //
+        Task SaveUserInfo2(int operatorID, UserInfo user1, UserInfo user2);
 
         void Mark(int ms);
 

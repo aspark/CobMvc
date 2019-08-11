@@ -1,7 +1,9 @@
 ﻿using CobMvc.Core;
 using CobMvc.Core.Client;
+using CobMvc.Core.Common;
 using CobMvc.Core.Service;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -17,20 +19,19 @@ namespace CobMvc.Client
     internal class HttpClientCobRequest : CobRequestBase
     {
         HttpClient _client = null;
+        CobMvcOptions _options = null;
         ICobMvcContextAccessor _contextAccessor = null;
         ILogger<HttpClientCobRequest> _logger = null;
 
-        static HttpClientCobRequest()
+        public HttpClientCobRequest(IOptions<CobMvcOptions> options, IOptions<CobMvcRequestOptions> httpOptions, ICobMvcContextAccessor contextAccessor, ILogger<HttpClientCobRequest> logger)
         {
-            if (ServicePointManager.DefaultConnectionLimit < 100)//默认将链接数加到100
-                ServicePointManager.DefaultConnectionLimit = 100;
-        }
-
-        public HttpClientCobRequest(ICobMvcContextAccessor contextAccessor, ILogger<HttpClientCobRequest> logger)
-        {
+            _options = options.Value;
             _logger = logger;
             _contextAccessor = contextAccessor;
             _client = new HttpClient();
+
+            if (ServicePointManager.DefaultConnectionLimit < httpOptions.Value.MaxConnetions)//默认将链接数加到100
+                ServicePointManager.DefaultConnectionLimit = httpOptions.Value.MaxConnetions;
         }
 
         public override string SupportTransport { get => CobRequestTransports.Http; }
@@ -59,7 +60,7 @@ namespace CobMvc.Client
 
         private Task<object> Invoke(TypedCobRequestContext context, Type realType)
         {
-            var usePost = context.Method.GetParameters().Any(p => p.ParameterType.IsClass && p.ParameterType != typeof(string));
+            var usePost = context.Method.GetParameters().Any(p => !p.ParameterType.IsValueTypeOrString());
 
             return Invoke(context, realType, usePost ? HttpMethod.Post : HttpMethod.Get);
         }
@@ -71,17 +72,21 @@ namespace CobMvc.Client
             var passViaBody = (method == HttpMethod.Post || method == HttpMethod.Put) ;
 
             var url = context.Url;
-            if (!passViaBody)
+            var parameters = new Dictionary<string, object>(context.Parameters ?? new Dictionary<string, object>(), StringComparer.InvariantCultureIgnoreCase);
+            if (parameters != null && parameters.Any())
             {
-                if (context.Parameters != null && context.Parameters.Any())
+                var queries = parameters.Where(p => p.Value != null && p.Value.IsValueTypeOrString()).ToArray();
+                if(queries.Length > 0)
                 {
-                    var query = string.Join("&", context.Parameters.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value?.ToString())}"));
+                    var query = string.Join("&", queries.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value?.ToString())}"));
                     if (url.Contains('?'))
                         url += "&";
                     else
                         url += "?";
 
                     url += query;
+
+                    queries.ForEach(p => parameters.Remove(p.Key));
                 }
             }
 
@@ -89,21 +94,26 @@ namespace CobMvc.Client
 
             var msg = new HttpRequestMessage(method, url);
 
-            if (passViaBody && context.Parameters != null)
+            if (passViaBody && parameters != null)
             {
-                if (context.Parameters.Count == 1)
+                if (parameters.Count == 1)
                 {
-                    msg.Content = new StringContent(JsonConvert.SerializeObject(context.Parameters.First().Value), Encoding.UTF8, "application/json");
+                    msg.Content = new StringContent(JsonConvert.SerializeObject(parameters.First().Value), Encoding.UTF8, "application/json");
                 }
                 else
                 {
-                    msg.Content = new StringContent(JsonConvert.SerializeObject(context.Parameters), Encoding.UTF8, "application/json");
+                    if (parameters.Count > 1 && !_options.EnableCobMvcParametersBinder)
+                    {
+                        throw new Exception("find many parameters from body, please set CobMvcOptions.EnableCobMvcParametersBinder");
+                    }
+
+                    msg.Content = new StringContent(JsonConvert.SerializeObject(parameters), Encoding.UTF8, "application/json");//多个class类型的参数，整体推送过去
                 }
             }
 
             //添加traceid等
             msg.Headers.UserAgent.Clear();
-            msg.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(CobMvcDefaults.UserAgent, "0.0.1"));
+            msg.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(CobMvcDefaults.UserAgentValue, CobMvcDefaults.HeaderUserVersion));
             msg.Headers.Add(CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString());
             msg.Headers.Add(CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString());
             _logger?.LogDebug("set http request traceID:{0}", _contextAccessor.Current.TraceID);

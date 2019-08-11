@@ -33,9 +33,12 @@ namespace CobMvc
 
             ServicesExtensions.EnsureServerServices(mvcBuilder.Services);
 
+            mvcBuilder.AddMvcOptions(opt => opt.Filters.AddService<CobMvcParametersBinder>());
+
             return mvcBuilder;
         }
 
+        [Obsolete]
         public static IMvcBuilder AddCobMvc(this IMvcBuilder mvcBuilder, Action<CobMvcOptions> options, Action<ICobMvc> setup)
         {
             return mvcBuilder.AddCobMvc(cob => {
@@ -46,7 +49,7 @@ namespace CobMvc
 
         public static IMvcBuilder AddCobMvc(this IMvcBuilder mvcBuilder)
         {
-            return mvcBuilder.AddCobMvc(cob=> { });
+            return mvcBuilder.AddCobMvc(cob => { });
         }
 
         //public static IApplicationBuilder UseCobMvc<T>(this IApplicationBuilder mvcBuilder, Action<CobMvcStartupOptions> optionSetup = null)
@@ -114,13 +117,14 @@ namespace CobMvc
                 };
             }
 
-            var logger = mvcBuilder.ApplicationServices.GetRequiredService<ILoggerFactory>().CreateLogger<CobMvcMiddleware>();
+            var logger = mvcBuilder.ApplicationServices.GetRequiredService<ILoggerFactory>().CreateLogger("CobMvcExtensions");
             logger.LogDebug("register service:{0}\t{1}", svcInfo.Name, svcInfo.Address);
 
             var reg = mvcBuilder.ApplicationServices.GetRequiredService<IServiceRegistration>();
             reg.Register(svcInfo);
 
-            mvcBuilder.UseMiddleware<CobMvcMiddleware>();
+            mvcBuilder.UseMiddleware<CobMvcContextMiddleware>();
+            //mvcBuilder.UseMiddleware<CobMvcParametersBinder>();
 
             //todo:deregister
 
