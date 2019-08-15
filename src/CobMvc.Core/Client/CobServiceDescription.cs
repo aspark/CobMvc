@@ -16,7 +16,7 @@ namespace CobMvc.Core.Client
     {
         public CobServiceDescription()
         {
-
+            Filters = new ICobRequestFilter[0];
         }
 
         /// <summary>
@@ -69,6 +69,7 @@ namespace CobMvc.Core.Client
         /// </summary>
         public Type[] RetryExceptionTypes { get; set; }
 
+        public ICobRequestFilter[] Filters { get; set; }
 
         private static ConcurrentDictionary<string, string> _serviceNameAddr = new ConcurrentDictionary<string, string>();
         protected string ResolveAddress(ServiceInfo service)
@@ -132,7 +133,7 @@ namespace CobMvc.Core.Client
         /// </summary>
         /// <param name="refer"></param>
         /// <returns></returns>
-        public virtual CobServiceDescription Refer(CobServiceDescription refer)
+        internal protected virtual CobServiceDescription Refer(CobServiceDescription refer)
         {
             AssignByValidValue(this.ServiceName, refer.ServiceName, v => ServiceName = v);
 
@@ -149,6 +150,9 @@ namespace CobMvc.Core.Client
                 this.RetryExceptionTypes = (this.RetryExceptionTypes ?? new Type[0]).Concat(refer.RetryExceptionTypes).ToArray();
 
             //AssignByValidValue(this.Formatter, refer.Formatter, v => Formatter = v);
+
+            if (HasValue(refer.Filters))
+                this.Filters = refer.Filters.Concat(this.Filters ?? new ICobRequestFilter[0]).ToArray();//refer的filter在方法的前面
 
             return this;
         }
@@ -270,7 +274,7 @@ namespace CobMvc.Core.Client
             return GetUrl(service);
         }
 
-        public override CobServiceDescription Refer(CobServiceDescription refer)
+        internal protected override CobServiceDescription Refer(CobServiceDescription refer)
         {
             this.Parent = refer;
 
@@ -362,6 +366,15 @@ namespace CobMvc.Core.Client
                 desc.RetryExceptionTypes = strategy.Exceptions;
                 desc.FallbackValue = strategy.FallbackValue;
                 desc.FallbackHandler = strategy.FallbackHandler;
+
+                hasConfig = true;
+            }
+
+            //过滤器
+            var filters = attrs.Where(a => a is ICobRequestFilter);
+            if(filters.Any())
+            {
+                desc.Filters = filters.Cast<ICobRequestFilter>().OrderBy(f => f.Order).ToArray();
 
                 hasConfig = true;
             }

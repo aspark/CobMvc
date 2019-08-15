@@ -56,7 +56,14 @@ namespace CobMvc.Client
                     var url = desc.GetUrl(service, invocation.Method);
                     var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = service.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };//, Timeout = desc.Timeout
 
+                    if (desc.Filters != null)
+                    {
+                        desc.Filters.ForEach(f => f.OnBeforeRequest(ctx));
+                    }
+
                     return _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
+
+
                 }, invocation.Method, parameters);
             }
         }
@@ -172,6 +179,15 @@ namespace CobMvc.Client
 
         #region 都转为Task执行
 
+        /// <summary>
+        /// 包状代理，添加重试、超时等机制
+        /// </summary>
+        /// <param name="returnType"></param>
+        /// <param name="desc"></param>
+        /// <param name="action"></param>
+        /// <param name="method"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
         public object Execute(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task<object>> action, MethodInfo method = null, Dictionary<string, object> parameters = null)
         {
             Func<ServiceInfo, Task> asyncAction = action;
@@ -189,7 +205,14 @@ namespace CobMvc.Client
                             throw new TimeoutException();
                         }
 
-                        return taskOriginal.Result;
+                        var result = taskOriginal.Result;
+
+                        if (desc.Filters != null)
+                        {
+                            desc.Filters.ForEach(f => f.OnAfterResponse(method, result));
+                        }
+
+                        return result;
                     });
 
                     return taskWrapped;

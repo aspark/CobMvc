@@ -116,6 +116,9 @@ namespace CobMvc.Client
             msg.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(CobMvcDefaults.UserAgentValue, CobMvcDefaults.HeaderUserVersion));
             msg.Headers.Add(CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString());
             msg.Headers.Add(CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString());
+            
+            //todo:ICobRequestFilter支持header?
+
             _logger?.LogDebug("set http request traceID:{0}", _contextAccessor.Current.TraceID);
 
             var response = await _client.SendAsync(msg);

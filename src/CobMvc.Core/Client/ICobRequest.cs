@@ -115,45 +115,7 @@ namespace CobMvc.Core.Client
 
             return action(realReturnType);
         }
-
-        //该部分挪到clientProxy中
-        //protected internal object MatchRealType(CobRequestContext context, Func<Type, Task<object>> action)
-        //{
-        //    var realReturnType = TaskHelper.GetUnderlyingType(context.ReturnType, out bool isTask);//去掉task/void等泛型
-
-        //    var taskOriginal = action(realReturnType);
-
-        //    var taskWrapped = taskOriginal;
-
-        //    //timeout
-        //    if (context.Timeout.TotalSeconds > 0)
-        //    {
-        //        var taskTimeout = Task.Delay(context.Timeout.TotalSeconds > 0 ? context.Timeout : TimeSpan.FromSeconds(30));//不为空且大于0的超时时间
-        //        taskWrapped = Task.WhenAny(taskOriginal, taskTimeout).ContinueWith(t =>
-        //        {
-        //            if (t.Result == taskTimeout && taskOriginal.Status < TaskStatus.Running)
-        //            {
-        //                throw new TimeoutException(this.GetDebugInfo());
-        //            }
-
-        //            return taskOriginal.Result;
-        //        });
-        //    }
-
-        //    if (isTask)
-        //    {
-        //        return TaskHelper.ConvertToGeneric(realReturnType, taskWrapped);
-        //    }
-        //    else if (realReturnType != null)
-        //    {
-        //        return taskWrapped.ConfigureAwait(false).GetAwaiter().GetResult();
-        //    }
-
-        //    return null;
-        //}
-
-        //protected abstract Task<object> Get(Type realType);
-
+        
         public virtual string GetDebugInfo()
         {
             return string.Empty;
