@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.2</LangVersion>
-    <Version>0.1.0-rc</Version>
+    <Version>0.2.0-beta</Version>
     <Authors>aspark</Authors>
     <Description>a simple microservice framework base on asp.net core mvc, use websocket as transport</Description>
     <PackageProjectUrl>https://github.com/aspark/CobMvc</PackageProjectUrl>
