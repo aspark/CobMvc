@@ -6,6 +6,7 @@ using CobMvc.Core.Service;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -26,8 +27,10 @@ namespace CobMvc.Client
         ILoggerFactory _loggerFactory = null;
         ILogger _logger = null;
         ICobMvcContextAccessor _contextAccessor = null;
+        IOptions<CobMvcRequestOptions> _requestOptions;
 
-        public CobClientProxy(ICobRequestResolver requestResolver, CobServiceClassDescription typeDesc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory, ICobMvcContextAccessor contextAccessor)
+        public CobClientProxy(ICobRequestResolver requestResolver, CobServiceClassDescription typeDesc, IServiceRegistration serviceDiscovery, 
+            ILoggerFactory loggerFactory, ICobMvcContextAccessor contextAccessor, IOptions<CobMvcRequestOptions> requestOptions)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<CobClientProxy>();
@@ -35,6 +38,7 @@ namespace CobMvc.Client
             _requestResolver = requestResolver;//change request by service descriptor
             _selector = new DefaultServiceSelector(serviceDiscovery, _typeDesc.ServiceName, _loggerFactory.CreateLogger<DefaultServiceSelector>());
             _contextAccessor = contextAccessor;
+            _requestOptions = requestOptions;
         }
 
         public void Intercept(IInvocation invocation)
@@ -50,7 +54,7 @@ namespace CobMvc.Client
                 parameters[names[i]] = invocation.Arguments[i];
             }
 
-            using (var env = new ServiceExecutionEnv(_loggerFactory, _selector))
+            using (var env = new ServiceExecutionEnv(_loggerFactory, _selector, _requestOptions))
             {
                 var desc = _typeDesc.GetActionOrTypeDesc(invocation.Method);
 
@@ -89,12 +93,14 @@ namespace CobMvc.Client
         ILogger _logger = null;
         //CobServiceDescription _desc = null;
         ICobServiceSelector _selector = null;
+        CobMvcRequestOptions _requestOptions;
 
-        public ServiceExecutionEnv(ILoggerFactory loggerFactory, ICobServiceSelector selector)/*CobServiceDescription desc, */
+        public ServiceExecutionEnv(ILoggerFactory loggerFactory, ICobServiceSelector selector, IOptions<CobMvcRequestOptions> requestOptions)/*CobServiceDescription desc, */
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<ServiceExecutionEnv>();
             _selector = selector;
+            _requestOptions = requestOptions.Value;
         }
 
 
@@ -206,7 +212,7 @@ namespace CobMvc.Client
             if (desc.Timeout.TotalSeconds > 0)
             {
                 asyncAction = s => {
-                    var taskTimeout = Task.Delay(desc.Timeout.TotalSeconds > 0 ? desc.Timeout : TimeSpan.FromSeconds(30));//不为空且大于0的超时时间
+                    var taskTimeout = Task.Delay(desc.Timeout.TotalSeconds > 0 ? desc.Timeout : TimeSpan.FromSeconds(_requestOptions.DefaultTimeout));//不为空且大于0的超时时间
                     var taskOriginal = action(s);
                     var taskWrapped = Task.WhenAny(taskOriginal, taskTimeout).ContinueWith(t =>
                     {
@@ -458,18 +464,21 @@ namespace CobMvc.Client
         ICobServiceSelector _selector = null;
         //ILogger _logger = null;
         ILoggerFactory _loggerFactory = null;
+        IOptions<CobMvcRequestOptions> _requestOptions;
 
-        public CobCommonClientProxy(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, CobServiceDescription desc, ILoggerFactory loggerFactory)
+        public CobCommonClientProxy(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, CobServiceDescription desc, 
+            ILoggerFactory loggerFactory, IOptions<CobMvcRequestOptions> requestOptions)
         {
             _desc = desc;
             _requestResolver = requestResolver;
             _loggerFactory = loggerFactory;
             _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName, loggerFactory?.CreateLogger<DefaultServiceSelector>());
+            _requestOptions = requestOptions;
         }
 
         public T Invoke<T>(string action, Dictionary<string, object> parameters, object state)
         {
-            using (var env = new ServiceExecutionEnv(_loggerFactory, _selector))
+            using (var env = new ServiceExecutionEnv(_loggerFactory, _selector, _requestOptions))
             {
                 return (T)env.Execute(typeof(T), _desc, service => {
                     var url = _desc.GetUrl(service, action);

@@ -1,5 +1,6 @@
 ﻿using CobMvc.Core.Common;
 using CobMvc.Core.Service;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -25,9 +26,9 @@ namespace CobMvc.Core.Client
         public string ServiceName { get; set; }
 
         /// <summary>
-        /// 将服务名替换为服务发现中的Host，默认为true。如需使用sidecar等代理模式请设置为false
+        /// 将服务名替换为服务发现中的Host，默认当作true。如需使用sidecar等代理模式请设置为false
         /// </summary>
-        public bool ResolveServiceName { get; set; } = true;
+        public bool? ResolveServiceName { get; set; }
 
         /// <summary>
         /// 访问路径
@@ -74,7 +75,7 @@ namespace CobMvc.Core.Client
         private static ConcurrentDictionary<string, string> _serviceNameAddr = new ConcurrentDictionary<string, string>();
         protected string ResolveAddress(ServiceInfo service)
         {
-            if(!ResolveServiceName)
+            if((ResolveServiceName ?? true) == false)
             {
                 if(!string.Equals(Transport, CobRequestTransports.Http, StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -85,7 +86,7 @@ namespace CobMvc.Core.Client
                     var builder = new UriBuilder(service.Address);
 
                     //去除host port等信息
-                    builder.Host = service.Address;
+                    builder.Host = service.Name;
 
                     if(string.Equals(builder.Scheme, "https", StringComparison.InvariantCultureIgnoreCase))
                         builder.Port = 443;
@@ -151,6 +152,11 @@ namespace CobMvc.Core.Client
 
             //AssignByValidValue(this.Formatter, refer.Formatter, v => Formatter = v);
 
+            //AssignByValidValue(this.ResolveServiceName, refer.ResolveServiceName, v => ResolveServiceName = v);
+            if (this.ResolveServiceName == null && refer.ResolveServiceName != null)
+                this.ResolveServiceName = refer.ResolveServiceName;
+
+
             if (HasValue(refer.Filters))
                 this.Filters = refer.Filters.Concat(this.Filters ?? new ICobRequestFilter[0]).ToArray();//refer的filter在方法的前面
 
@@ -209,7 +215,7 @@ namespace CobMvc.Core.Client
     /// </summary>
     public class CobServiceClassDescription : CobServiceTypeDescription
     {
-        public ConcurrentDictionary<MethodInfo, TypedCobActionDescription> ActionDescriptors { get; private set; } = new ConcurrentDictionary<MethodInfo, TypedCobActionDescription>();
+        public ConcurrentDictionary<MethodInfo, CobServiceActionDescription> ActionDescriptors { get; private set; } = new ConcurrentDictionary<MethodInfo, CobServiceActionDescription>();
 
         public CobServiceTypeDescription GetActionOrTypeDesc(MethodInfo action)
         {
@@ -249,7 +255,7 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 方法描述
     /// </summary>
-    public class TypedCobActionDescription : CobServiceTypeDescription
+    public class CobServiceActionDescription : CobServiceTypeDescription
     {
         public CobServiceDescription Parent { get; internal set; }
 
@@ -285,15 +291,21 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 根据Type生成服务的描述
     /// </summary>
-    public interface ICobServiceDescriptorGenerator
+    public interface ICobServiceDescriptionGenerator
     {
         //TypedCobServiceDescriptor Create<T>() where T : class;
 
         CobServiceClassDescription Create(Type type);
     }
 
-    public class CobServiceDescriptorGenerator : ICobServiceDescriptorGenerator
+    public class CobServiceDescriptionGenerator : ICobServiceDescriptionGenerator
     {
+        CobMvcRequestOptions _requestOptions;
+
+        public CobServiceDescriptionGenerator(IOptions<CobMvcRequestOptions> requestOptions)
+        {
+            _requestOptions = requestOptions.Value;
+        }
 
         private ConcurrentDictionary<Type, CobServiceClassDescription> _serviceDesc = new ConcurrentDictionary<Type, CobServiceClassDescription>();
 
@@ -319,7 +331,7 @@ namespace CobMvc.Core.Client
             foreach(var method in targetType.GetMethods())
             {
                 attrs = method.GetCustomAttributes(false);
-                if(ParseCobService(attrs, true, out TypedCobActionDescription item) && item != null)
+                if(ParseCobService(attrs, true, out CobServiceActionDescription item) && item != null)
                 {
                     //合并方法与全局配置
                     item.Refer(global);
@@ -351,7 +363,7 @@ namespace CobMvc.Core.Client
                 desc.ResolveServiceName = service.ResolveServiceName;
                 desc.Path = service.Path;
                 desc.Transport = service.Transport;
-                desc.Timeout = service.Timeout > 0 ? TimeSpan.FromSeconds(service.Timeout) : TimeSpan.FromSeconds(30);//todo:超时可配置
+                desc.Timeout = service.Timeout > 0 ? TimeSpan.FromSeconds(service.Timeout) : TimeSpan.FromSeconds(_requestOptions.DefaultTimeout);//超时
 
                 hasConfig = true;
             }

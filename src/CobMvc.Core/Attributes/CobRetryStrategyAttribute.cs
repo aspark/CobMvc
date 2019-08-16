@@ -13,8 +13,14 @@ namespace CobMvc.Core
         /// </summary>
         public Type[] Exceptions { get; set; } = new Type[0];
 
-        public int Count { get; set; }
+        /// <summary>
+        /// 重试次数，默认3次
+        /// </summary>
+        public int Count { get; set; } = 3;
 
+        /// <summary>
+        /// 失败后回退的默认值
+        /// </summary>
         public string FallbackValue { get; set; }
 
         /// <summary>

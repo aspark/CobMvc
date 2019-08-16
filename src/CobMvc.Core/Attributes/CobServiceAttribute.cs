@@ -38,7 +38,7 @@ namespace CobMvc.Core
         public string Transport { get; set; }
 
         /// <summary>
-        /// 超时时间（秒）。为0时，不设置
+        /// 超时时间（秒）。为0或null时使用全局设置
         /// </summary>
         public float Timeout { get; set; }
     }

@@ -34,5 +34,10 @@ namespace CobMvc.Core
         /// http最大连接数，默认 200
         /// </summary>
         public int MaxConnetions { get; set; } = 200;
+
+        /// <summary>
+        /// 全局默认超时时间：30秒
+        /// </summary>
+        public float DefaultTimeout { get; set; } = 3;
     }
 }
