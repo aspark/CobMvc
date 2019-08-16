@@ -16,7 +16,7 @@ namespace CobMvc.Test
         private ServiceInfo _service = new Core.Service.ServiceInfo() { Name = "name", Address = "http://cobmvc.test/" };
 
         [Fact]
-        public void TestGeneratorA()
+        public void TestGeneratorSimple()
         {
             var options = Options.Create(new CobMvcRequestOptions());
 
@@ -75,7 +75,7 @@ namespace CobMvc.Test
         }
 
         [Fact]
-        public void TestGeneratorB()
+        public void TestGeneratorOverrideConfig()
         {
             var options = Options.Create(new CobMvcRequestOptions());
 
