@@ -111,13 +111,21 @@ namespace CobMvc.Client
                 }
             }
 
-            //添加traceid等
             msg.Headers.UserAgent.Clear();
-            msg.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(CobMvcDefaults.UserAgentValue, CobMvcDefaults.HeaderUserVersion));
-            msg.Headers.Add(CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString());
-            msg.Headers.Add(CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString());
-            
-            //todo:ICobRequestFilter支持header?
+            //msg.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue(CobMvcDefaults.UserAgentValue, CobMvcDefaults.HeaderUserVersion));
+            //msg.Headers.Add(CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString());
+            //msg.Headers.Add(CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString());
+
+            //设置header
+            //添加traceid等
+            if (context.Extensions != null)
+            {
+                context.Extensions.ForEach(ex =>
+                {
+                    msg.Headers.Add(ex.Key, ex.Value);
+                });
+            }
+
 
             _logger?.LogDebug("set http request traceID:{0}", _contextAccessor.Current.TraceID);
 

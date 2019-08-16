@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
-namespace CobMvc.Core.Attributes
+namespace CobMvc.Core
 {
-    public class CobRequestFilterAttribute : Attribute, ICobRequestFilter
+    public abstract class CobRequestFilterAttribute : Attribute, ICobRequestFilter
     {
         public int Order { get; set; }
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CobMvc.Core.Attributes
+namespace CobMvc.Core
 {
     /// <summary>
     /// 从Configuration中加载配置

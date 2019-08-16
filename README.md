@@ -162,7 +162,7 @@ builder.ConfigureAppConfiguration(b=> {
 
 ## 其它
 1. `CobMvc.Client`库也可以调用其它非CobMvc的restful api服务使用
-2. 如果需要拦截请求，请使用`CobRequestFilterAttribute`
+2. 如果需要拦截请求，请使用`CobRequestFilterAttribute`，参见deom中的`AuthRequestFilter`
 
 ---
 

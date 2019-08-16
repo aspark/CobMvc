@@ -65,6 +65,12 @@ namespace CobMvc.Core.Client
 
     public class CobRequestContext
     {
+        public CobRequestContext()
+        {
+            Parameters = new Dictionary<string, object>();
+            Extensions = new Dictionary<string, string>();
+        }
+
         public string ServiceName { get; set; }
 
         public string TargetAddress { get; set; }
@@ -74,9 +80,15 @@ namespace CobMvc.Core.Client
         /// </summary>
         public string Url { get; set; }
 
+        /// <summary>
+        /// 参数，强类型参数会添加到body中以Post方式提交
+        /// </summary>
         public Dictionary<string, object> Parameters { get; set; }
 
-        //public object Body { get; set; }
+        /// <summary>
+        /// 扩展信息，以HTTP通信时，放置于Header中；以Websocket通信时，放置于Properties中
+        /// </summary>
+        public Dictionary<string, string> Extensions { get; set; }
 
         /// <summary>
         /// 如果为void非为null

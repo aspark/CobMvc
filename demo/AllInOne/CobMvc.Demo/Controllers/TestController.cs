@@ -7,6 +7,7 @@ using CobMvc.Core.Client;
 using CobMvc.Demo.Contract;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Http.Extensions;
 
 namespace CobMvc.Demo.Controllers
 {
@@ -38,6 +39,10 @@ namespace CobMvc.Demo.Controllers
             var time = DateTime.Now.ToString("HH:mm:ss.ffff");
 
             Console.WriteLine($"{time}\t{_cobmvcContextAccessor.Current.TraceID}\tinvoke GetNames");
+            Console.WriteLine($"Url:{Request.GetDisplayUrl()}");
+            Request.Headers.ToList().ForEach(h => {
+                Console.WriteLine($"Header:{h.Key}\t{h.Value}");
+            });
 
             return new string[] { time, time };
         }

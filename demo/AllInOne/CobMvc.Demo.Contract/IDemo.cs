@@ -10,6 +10,7 @@ namespace CobMvc.Demo.Contract
 {
     [CobService("CobMvcDemo", Path ="/api/test/")]//, Timeout = 1, Transport = CobRequestTransports.WebSocket
     [CobRetryStrategy(Count = 5, Exceptions = new[] { typeof(TimeoutException), typeof(Exception) })]
+    [AuthRequestFilter]
     public interface IDemo
     {
         [CobService(Path = "/api/GetNames")]
@@ -39,5 +40,18 @@ namespace CobMvc.Demo.Contract
         public string Name { get; set; }
 
         public string Addr { get; set; }
+    }
+
+    /// <summary>
+    /// 模拟添加token校验
+    /// </summary>
+    public class AuthRequestFilter: CobRequestFilterAttribute
+    {
+        public override void OnBeforeRequest(CobRequestContext context)
+        {
+            //base.OnBeforeRequest(context);
+            context.Parameters.Add("t", DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString());
+            context.Extensions.Add("x-token", "token-abc");
+        }
     }
 }

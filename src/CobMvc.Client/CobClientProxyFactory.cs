@@ -1,4 +1,5 @@
 ﻿using Castle.DynamicProxy;
+using CobMvc.Core;
 using CobMvc.Core.Client;
 using CobMvc.Core.Service;
 using Microsoft.Extensions.Logging;
@@ -17,14 +18,16 @@ namespace CobMvc.Client
         ICobServiceDescriptorGenerator _descriptorGenerator = null;
         ILoggerFactory _loggerFactory = null;
         Lazy<ProxyGenerator> _proxyGenerator = null;
+        ICobMvcContextAccessor _contextAccessor = null;
 
-        public CobClientProxyFactory(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, ICobServiceDescriptorGenerator descriptorGenerator, ILoggerFactory loggerFactory)
+        public CobClientProxyFactory(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, ICobServiceDescriptorGenerator descriptorGenerator, ILoggerFactory loggerFactory, ICobMvcContextAccessor contextAccessor)
         {
             _proxyGenerator = new Lazy<ProxyGenerator>(()=> new ProxyGenerator(), false);
             _loggerFactory = loggerFactory;
             _requestResolver = requestResolver;
             _serviceDiscovery = serviceDiscovery;
             _descriptorGenerator = descriptorGenerator;
+            _contextAccessor = contextAccessor;
         }
 
         private ConcurrentDictionary<Type, CobClientProxy> _interceptor = new ConcurrentDictionary<Type, CobClientProxy>();
@@ -33,7 +36,7 @@ namespace CobMvc.Client
             var obj = _proxyGenerator.Value.CreateInterfaceProxyWithoutTarget<T>(_interceptor.GetOrAdd(typeof(T), type=> {
                 var typeDesc = _descriptorGenerator.Create(type);
 
-                return new CobClientProxy(_requestResolver, typeDesc, _serviceDiscovery, _loggerFactory);
+                return new CobClientProxy(_requestResolver, typeDesc, _serviceDiscovery, _loggerFactory, _contextAccessor);
             }));
 
             return obj;

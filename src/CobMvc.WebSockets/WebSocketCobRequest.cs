@@ -12,13 +12,13 @@ using System.Threading.Tasks;
 
 namespace CobMvc.WebSockets
 {
-    internal class CobWebSocketClient : CobRequestBase
+    internal class WebSocketCobRequest : CobRequestBase
     {
         private ClientWebSocketPoolFactory _clientWebSocketPoolFactory = null;
         ICobMvcContextAccessor _contextAccessor = null;
-        ILogger<CobWebSocketClient> _logger = null;
+        ILogger<WebSocketCobRequest> _logger = null;
 
-        public CobWebSocketClient(ICobMvcContextAccessor contextAccessor, ILogger<CobWebSocketClient> logger, ClientWebSocketPoolFactory clientWebSocketPoolFactory)
+        public WebSocketCobRequest(ICobMvcContextAccessor contextAccessor, ILogger<WebSocketCobRequest> logger, ClientWebSocketPoolFactory clientWebSocketPoolFactory)
         {
             _logger = logger;
             _contextAccessor = contextAccessor;
@@ -87,9 +87,19 @@ namespace CobMvc.WebSockets
 
             request.Method = url;//new Uri(url).PathAndQuery
             request.Params = parameters;
-            request.Properties.Add(CobMvcDefaults.UserAgentValue, $"{CobMvcDefaults.HeaderUserAgent}/{CobMvcDefaults.HeaderUserVersion}");
-            request.Properties.Add(CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString());
-            request.Properties.Add(CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString());
+            //request.Properties.Add(CobMvcDefaults.UserAgentValue, $"{CobMvcDefaults.HeaderUserAgent}/{CobMvcDefaults.HeaderUserVersion}");
+            //request.Properties.Add(CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString());
+            //request.Properties.Add(CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString());
+
+            if (context.Extensions != null)
+            {
+                //foreach (var ex in context.Extensions)
+                //{
+                //    request.Properties.Add(ex.Key, ex.Value);
+                //};
+                request.Properties = context.Extensions;
+            }
+
             _logger?.LogDebug("set request traceID:{0}", _contextAccessor.Current.TraceID);
 
             return true;

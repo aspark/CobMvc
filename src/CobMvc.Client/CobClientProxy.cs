@@ -25,14 +25,16 @@ namespace CobMvc.Client
         ICobServiceSelector _selector = null;
         ILoggerFactory _loggerFactory = null;
         ILogger _logger = null;
+        ICobMvcContextAccessor _contextAccessor = null;
 
-        public CobClientProxy(ICobRequestResolver requestResolver, CobServiceClassDescription typeDesc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory)
+        public CobClientProxy(ICobRequestResolver requestResolver, CobServiceClassDescription typeDesc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory, ICobMvcContextAccessor contextAccessor)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<CobClientProxy>();
             _typeDesc = typeDesc;
             _requestResolver = requestResolver;//change request by service descriptor
             _selector = new DefaultServiceSelector(serviceDiscovery, _typeDesc.ServiceName, _loggerFactory.CreateLogger<DefaultServiceSelector>());
+            _contextAccessor = contextAccessor;
         }
 
         public void Intercept(IInvocation invocation)
@@ -55,6 +57,14 @@ namespace CobMvc.Client
                 invocation.ReturnValue = env.Execute(invocation.Method.ReturnType, desc, service => {
                     var url = desc.GetUrl(service, invocation.Method);
                     var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = service.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };//, Timeout = desc.Timeout
+
+                    //设置请求头
+                    ctx.Extensions = new Dictionary<string, string>()
+                    {
+                        { CobMvcDefaults.HeaderUserAgent, $"{CobMvcDefaults.UserAgentValue}/{CobMvcDefaults.HeaderUserVersion}" },
+                        { CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString() },
+                        { CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString() }
+                    };
 
                     if (desc.Filters != null)
                     {

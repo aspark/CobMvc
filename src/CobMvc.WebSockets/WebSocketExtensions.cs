@@ -27,7 +27,7 @@ namespace CobMvc.WebSockets
         public static ICobMvc AddCobWebSockets(this ICobMvc web)
         {
             web.ConfigureServices(services => {
-                services.AddSingleton<ICobRequest, CobWebSocketClient>();
+                services.AddSingleton<ICobRequest, WebSocketCobRequest>();
                 services.AddSingleton<ServerWebSocketPool>(); 
                 //services.AddSingleton<ClientWebSocketPool>();
                 services.AddSingleton<ClientWebSocketPoolFactory>();
