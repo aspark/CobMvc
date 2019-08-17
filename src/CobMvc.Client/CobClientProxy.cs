@@ -58,7 +58,16 @@ namespace CobMvc.Client
             {
                 var desc = _typeDesc.GetActionOrTypeDesc(invocation.Method);
 
-                invocation.ReturnValue = env.Execute(invocation.Method.ReturnType, desc, service => {
+                invocation.ReturnValue = env.Execute(invocation.Method.ReturnType, desc, async service =>
+                {
+                    //try
+                    //{
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    return Task.FromException<object>(ex.GetInnerException());
+                    //}
+
                     var url = desc.GetUrl(service, invocation.Method);
                     var ctx = new TypedCobRequestContext()
                     {
@@ -72,25 +81,18 @@ namespace CobMvc.Client
 
                     //设置请求头
                     ctx.Extensions = new Dictionary<string, string>()
-                    {
-                        { CobMvcDefaults.HeaderUserAgent, $"{CobMvcDefaults.UserAgentValue}/{CobMvcDefaults.HeaderUserVersion}" },
-                        { CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString() },
-                        { CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString() }
-                    };
-
-                    try
-                    {
-                        if (desc.Filters != null)
                         {
-                            desc.Filters.ForEach(f => f.OnBeforeRequest(ctx));
-                        }
+                            { CobMvcDefaults.HeaderUserAgent, $"{CobMvcDefaults.UserAgentValue}/{CobMvcDefaults.HeaderUserVersion}" },
+                            { CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString() },
+                            { CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString() }
+                        };
 
-                        return _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
-                    }
-                    catch(Exception ex)
+                    if (desc.Filters != null)
                     {
-                        return Task.FromException<object>(ex.GetInnerException());
+                        desc.Filters.ForEach(f => f.OnBeforeRequest(ctx));
                     }
+
+                    return await _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
 
                 }, invocation.Method, parameters);
             }
@@ -212,12 +214,6 @@ namespace CobMvc.Client
         /// <summary>
         /// 包状代理，添加重试、超时等机制
         /// </summary>
-        /// <param name="returnType"></param>
-        /// <param name="desc"></param>
-        /// <param name="action"></param>
-        /// <param name="method"></param>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
         public object Execute(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task<object>> action, MethodInfo method = null, Dictionary<string, object> parameters = null)
         {
             Func<ServiceInfo, Task> asyncAction = action;
@@ -228,6 +224,7 @@ namespace CobMvc.Client
                 asyncAction = s => {
                     var taskTimeout = Task.Delay(desc.Timeout.TotalSeconds > 0 ? desc.Timeout : TimeSpan.FromSeconds(_requestOptions.DefaultTimeout));//不为空且大于0的超时时间
                     var taskOriginal = action(s);
+
                     var taskWrapped = Task.WhenAny(taskOriginal, taskTimeout).ContinueWith(t =>
                     {
                         if (t.Result == taskTimeout && taskOriginal.Status < TaskStatus.Running)
@@ -256,9 +253,9 @@ namespace CobMvc.Client
         private static ConcurrentDictionary<Type, ICobFallbackHandler> _fallbackHandlers = new ConcurrentDictionary<Type, ICobFallbackHandler>();
         private object ExecuteAsync(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task> action, MethodInfo method = null, Dictionary<string, object> parameters = null)
         {
-            var retry = new ServiceTaskRetry(_loggerFactory, _selector, desc.RetryTimes, desc.RetryExceptionTypes);
+            var retry = new ServiceTaskRetryContainer(_loggerFactory, _selector, desc.RetryTimes, desc.RetryExceptionTypes);
 
-            var taskResult = retry.ExecuteRaw(action).ContinueWith(t => {
+            var taskResult = retry.RunForResult(action).ContinueWith(t => {
                 foreach(var item in t.Result)
                 {
                     if (item.Service != null)
@@ -323,7 +320,7 @@ namespace CobMvc.Client
         }
 
         //action重试辅助类
-        private class ServiceTaskRetry : IDisposable
+        private class ServiceTaskRetryContainer : IDisposable
         {
             ILogger _logger = null;
             TaskCompletionSource<TaskRetryResult>[] _waiters = null;
@@ -332,7 +329,7 @@ namespace CobMvc.Client
             int _maxTimes = 1;
             HashSet<Type> _exceptionTypes = null;
 
-            public ServiceTaskRetry(ILoggerFactory loggerFactory, ICobServiceSelector selector, int times, Type[] exceptionTypes)
+            public ServiceTaskRetryContainer(ILoggerFactory loggerFactory, ICobServiceSelector selector, int times, Type[] exceptionTypes)
             {
                 _logger = loggerFactory.CreateLogger<ServiceExecutionEnv>();
                 _selector = selector;
@@ -344,16 +341,16 @@ namespace CobMvc.Client
                     _waiters[i] = new TaskCompletionSource<TaskRetryResult>();
             }
 
-            public Task<TaskRetryResult[]> ExecuteRaw(Func<ServiceInfo, Task> action)
+            public Task<TaskRetryResult[]> RunForResult(Func<ServiceInfo, Task> action)
             {
                 ExecuteImpl(action);
 
                 return Task.WhenAll(_waiters.Select(t => t.Task));
             }
 
-            public Task<object> Execute(Func<ServiceInfo, Task> action)
+            public Task<object> Run(Func<ServiceInfo, Task> action)
             {
-                return ExecuteRaw(action).ContinueWith(t => {
+                return RunForResult(action).ContinueWith(t => {
                     if (t.Result != null)
                     {
                         var result = t.Result.FirstOrDefault(i => i.Exception == null);
