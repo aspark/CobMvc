@@ -24,7 +24,7 @@ namespace CobMvc.Core.InMemory
 
         public Task<List<ServiceInfo>> GetByName(string name)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(_services.Values.Where(v => string.Equals(name, v.Name, StringComparison.InvariantCultureIgnoreCase)).ToList());
         }
 
         public Task<bool> Register(ServiceInfo entry)
@@ -36,7 +36,13 @@ namespace CobMvc.Core.InMemory
 
         public Task<bool> SetStatus(string id, ServiceInfoStatus status)
         {
-            throw new NotImplementedException();
+            if(_services.TryGetValue(id, out ServiceInfo service))
+            {
+                service.Status = status;
+                return Task.FromResult(true);
+            }
+
+            return Task.FromResult(false);
         }
     }
 }

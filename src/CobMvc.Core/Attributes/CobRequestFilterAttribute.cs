@@ -6,6 +6,7 @@ using System.Text;
 
 namespace CobMvc.Core
 {
+    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
     public abstract class CobRequestFilterAttribute : Attribute, ICobRequestFilter
     {
         public int Order { get; set; }
