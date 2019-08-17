@@ -50,8 +50,8 @@ namespace CobMvc.Demo.Contract
         public override void OnBeforeRequest(CobRequestContext context)
         {
             //base.OnBeforeRequest(context);
-            context.Parameters.Add("t", DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString());
-            context.Extensions.Add("x-token", "token-abc");
+            context.Parameters["t"] = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
+            context.Extensions["x-token"] = "token-abc";
         }
     }
 }

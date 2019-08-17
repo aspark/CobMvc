@@ -12,36 +12,58 @@ using CobMvc.Core;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using CobMvc.Core.Common;
+using System.Linq;
 
 namespace CobMvc.Test
 {
     public class CobClientProxyTest
     {
-        [Fact]
-        public void TestProxyFactory()
+        class ProxyFactoryBag
         {
-            CobRequestContext context = null;
-            object state = null;
+            public ICobClientFactory Factory { get; set; }
+
+            public CobRequestContext Context { get; set; }
+
+            public object State { get; set; }
+
+            public int InvokeCount { get; set; }
+
+            public void Reset()
+            {
+                Context = null;
+                State = null;
+                InvokeCount = 0;
+            }
+        }
+
+        private ProxyFactoryBag CreateProxyFactory()
+        {
+            ProxyFactoryBag result = new ProxyFactoryBag();
 
             var request = new Mock<ICobRequest>();
-            request.Setup(m => m.DoRequest(It.IsAny<CobRequestContext>(), It.IsAny<object>())).Callback<CobRequestContext, object>((ctx, s)=> {
-                context = ctx;
-                state = s;
+            request.Setup(m => m.DoRequest(It.IsAny<CobRequestContext>(), It.IsAny<object>())).Callback<CobRequestContext, object>((ctx, s) => {
+                result.Context = ctx;
+                result.State = s;
+                result.InvokeCount++;
             }).Returns<CobRequestContext, object>((ctx, s) => {
-                if (ctx.ReturnType != null)
-                {
-                    var type = TaskHelper.GetUnderlyingType(ctx.ReturnType, out _);
-                    if(type != null)
-                    {
-                        object value = null;
-                        if (type.IsValueType)
-                            value = Activator.CreateInstance(type);
+                var typed = ctx as TypedCobRequestContext;
+                var service = new ServiceA();
+                object value = null;
 
-                        return Task.FromResult(value);
-                    }
+                switch (typed.Method.Name)
+                {
+                    case nameof(ContractA.GetName):
+                        value = service.GetName(ctx.Parameters["id"].ToString()).Result;
+                        break;
+                    case nameof(ContractA.GetScore):
+                        value = service.GetScore((int)ctx.Parameters["id"]);
+                        break;
+                    case nameof(ContractA.SaveChanged):
+                        value = service.SaveChanged((Dto)ctx.Parameters["dto"]).Result;
+                        break;
                 }
 
-                return Task.FromResult<object>(null);
+                return Task.FromResult(value);
             });
 
             var requestResovler = new Mock<ICobRequestResolver>();
@@ -50,51 +72,72 @@ namespace CobMvc.Test
             var contextAccessor = new CobMvcContextAccessor();
 
             var serviceRegistration = new InMemoryServiceRegistration();
-            serviceRegistration.Register(new Core.Service.ServiceInfo { ID = "a", Name = nameof(ContractA), Address="http://cobmvc.test", Status = Core.Service.ServiceInfoStatus.Healthy });
+            serviceRegistration.Register(new Core.Service.ServiceInfo { ID = "a", Name = nameof(ContractA), Address = "http://cobmvc.test", Status = Core.Service.ServiceInfoStatus.Healthy });
             var requestOptions = Options.Create(new CobMvcRequestOptions());
 
-            var factory = new CobClientProxyFactory(
-                requestResovler.Object, 
-                serviceRegistration, 
-                new CobServiceDescriptionGenerator(requestOptions), 
+            result.Factory = new CobClientProxyFactory(
+                requestResovler.Object,
+                serviceRegistration,
+                new CobServiceDescriptionGenerator(requestOptions),
                 new LoggerFactory(),
                 contextAccessor,
                 requestOptions);
 
+            return result;
+        }
 
-            var proxy = factory.GetProxy<ContractA>();
+        [Fact]
+        public void TestProxyFactory()
+        {
+            var bag = CreateProxyFactory();
+            //完成构造factory
+            var proxy = bag.Factory.GetProxy<ContractA>();
 
+            bag.Reset();
             object result = proxy.GetScore(1);
-            context.ShouldNotBeNull();
-            //result.ShouldBe(0);
-            context.Url.ShouldBe("http://ContractA/sys/score", StringCompareShould.IgnoreCase);
-            context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderUserAgent);
-            context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderTraceID);
-            context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderJump);
-            context.Extensions.ShouldContainKey("author");
-            context.Extensions["author"].ShouldBe("admin", StringCompareShould.IgnoreCase);
-            context.Parameters.ShouldContainKey("id");
-            context.Parameters["id"].ShouldBe(1);
+            bag.Context.ShouldNotBeNull();
+            bag.InvokeCount.ShouldBe(1);
+            result.ShouldBe(2);
+            bag.Context.Url.ShouldBe("http://ContractA/sys/score", StringCompareShould.IgnoreCase);
+            bag.Context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderUserAgent);
+            bag.Context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderTraceID);
+            bag.Context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderJump);
+            bag.Context.Extensions.ShouldContainKey("author");
+            bag.Context.Extensions["author"].ShouldBe("admin", StringCompareShould.IgnoreCase);
+            bag.Context.Parameters.ShouldContainKey("id");
+            bag.Context.Parameters["id"].ShouldBe(1);
 
+            bag.Reset();
+            result = proxy.SaveChanged(new Dto { Opt = 1 }).GetAwaiter().GetResult();
+            bag.Context.ShouldNotBeNull();
+            result.ShouldBe(true);
+            bag.Context.Url.ShouldBe("http://ContractA/api/v1/SaveChanged", StringCompareShould.IgnoreCase);
+            bag.Context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderUserAgent);
+            bag.Context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderTraceID);
+            bag.Context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderJump);
+            bag.Context.Extensions.ShouldContainKey("author");
+            bag.Context.Extensions["author"].ShouldBe("aspark", StringCompareShould.IgnoreCase);
+            bag.Context.Parameters.ShouldContainKey("dto");
+            bag.Context.Parameters["dto"].ShouldBeAssignableTo<Dto>();
+            (bag.Context.Parameters["dto"] as Dto).Opt.ShouldBe(1);
+
+            //exception的放置到后面，因为这个会导致service不可用
+            bag.Reset();
             result = proxy.GetName("aspark").GetAwaiter().GetResult();
-            context.ShouldNotBeNull();
-            context.Url.ShouldBe("http://ContractA/api/v1/name", StringCompareShould.IgnoreCase);
-            context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderUserAgent);
-            context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderTraceID);
-            context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderJump);
-            context.Parameters.ShouldContainKey("id");
-            context.Parameters["id"].ShouldBe("aspark");
+            bag.Context.ShouldNotBeNull();
+            bag.InvokeCount.ShouldBe(3);
+            result.ShouldBe("not exists");
+            bag.Context.Url.ShouldBe("http://ContractA/api/v1/name", StringCompareShould.IgnoreCase);
+            bag.Context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderUserAgent);
+            bag.Context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderTraceID);
+            bag.Context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderJump);
+            bag.Context.Parameters.ShouldContainKey("id");
+            bag.Context.Parameters["id"].ShouldBe("aspark");
 
-            result = proxy.SaveChanged(new Dto { }).GetAwaiter().GetResult();
-            context.ShouldNotBeNull();
-            context.Url.ShouldBe("http://ContractA/api/v1/SaveChanged", StringCompareShould.IgnoreCase);
-            context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderUserAgent);
-            context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderTraceID);
-            context.Extensions.ShouldContainKey(CobMvcDefaults.HeaderJump);
-            context.Extensions.ShouldContainKey("author");
-            context.Extensions["author"].ShouldBe("aspark", StringCompareShould.IgnoreCase);
-            context.Parameters.ShouldContainKey("dto");
-            context.Parameters["dto"].ShouldBeAssignableTo<Dto>();
+            //3次重试后，已经无服务可用
+            Should.Throw<Exception>(() => {
+                proxy.SaveChanged(new Dto { Opt = 1 }).GetAwaiter().GetResult();//no service available
+            });
         }
 
         [CobService(nameof(ContractA), Path = "/api/v1", ResolveServiceName = EnumResolveServiceName.KeepServiceName)]
@@ -106,10 +149,10 @@ namespace CobMvc.Test
             int GetScore(int id);
 
             [CobService(Path = "name")]
-            [CobRetryStrategy(FallbackValue = "not exists")]
+            [CobRetryStrategy(FallbackValue = "\"not exists\"")]
             Task<string> GetName(string id);
 
-            [CobService(Timeout = 3, Transport = CobRequestTransports.WebSocket)]
+            [CobService(Timeout = 3)]
             [RequestFilter(Name = "aspark")]
             Task<bool> SaveChanged(Dto dto);
         }
@@ -119,7 +162,9 @@ namespace CobMvc.Test
             public Task<string> GetName(string id)
             {
                 //return Task.FromResult("@" + id);
-                throw new NotImplementedException();
+                throw new NotImplementedException();//use defalut value
+
+                //return Task.FromException<string>(new NotImplementedException());
             }
 
             public int GetScore(int id)
@@ -134,7 +179,9 @@ namespace CobMvc.Test
         }
 
         public class Dto
-        { }
+        {
+            public int Opt { get; set; }
+        }
 
         public class RequestFilter : CobRequestFilterAttribute
         {

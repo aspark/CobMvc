@@ -60,7 +60,15 @@ namespace CobMvc.Client
 
                 invocation.ReturnValue = env.Execute(invocation.Method.ReturnType, desc, service => {
                     var url = desc.GetUrl(service, invocation.Method);
-                    var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = service.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };//, Timeout = desc.Timeout
+                    var ctx = new TypedCobRequestContext()
+                    {
+                        ServiceName = desc.ServiceName,
+                        TargetAddress = service.Address,
+                        Url = url,
+                        Parameters = new Dictionary<string, object>(parameters),
+                        ReturnType = invocation.Method.ReturnType,
+                        Method = invocation.Method
+                    };//, Timeout = desc.Timeout
 
                     //设置请求头
                     ctx.Extensions = new Dictionary<string, string>()
@@ -70,13 +78,19 @@ namespace CobMvc.Client
                         { CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString() }
                     };
 
-                    if (desc.Filters != null)
+                    try
                     {
-                        desc.Filters.ForEach(f => f.OnBeforeRequest(ctx));
+                        if (desc.Filters != null)
+                        {
+                            desc.Filters.ForEach(f => f.OnBeforeRequest(ctx));
+                        }
+
+                        return _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
                     }
-
-                    return _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
-
+                    catch(Exception ex)
+                    {
+                        return Task.FromException<object>(ex.GetInnerException());
+                    }
 
                 }, invocation.Method, parameters);
             }
@@ -295,7 +309,7 @@ namespace CobMvc.Client
             }
             else if (realType != null)
             {
-                return taskResult.ConfigureAwait(false).GetAwaiter().GetResult();
+                return taskResult.ConfigureAwait(false).GetAwaiter().GetResult();//todo:在beforeRequest时抛出异常，这里就会一直等待？
             }
 
             return null;//todo:change to default(T) ??
@@ -381,7 +395,8 @@ namespace CobMvc.Client
                                 //_waiters[index].TrySetException(t.Exception);
                                 var ex = t.Exception.GetInnerException();//.GetBaseException();
                                 result = new TaskRetryResult(service, ex);
-                                if (_exceptionTypes.Count == 0 || _exceptionTypes.Contains(ex.GetType()))
+                                var exType = ex.GetType();
+                                if (_exceptionTypes.Count == 0 || _exceptionTypes.Contains(ex.GetType()) || _exceptionTypes.Any(e => e.IsAssignableFrom(exType)))
                                 {
                                     _waiters[index].SetResult(result);
 
