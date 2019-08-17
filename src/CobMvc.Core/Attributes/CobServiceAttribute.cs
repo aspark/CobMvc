@@ -23,9 +23,9 @@ namespace CobMvc.Core
         public string ServiceName { get; set; }
 
         /// <summary>
-        /// 将服务名替换为服务发现中的Host，默认为true。如需使用sidecar等代理模式请设置为false；暂只支持http/https
+        /// 将服务名替换为服务发现中的Host，默认为ResolveServiceName。如需使用sidecar等代理模式请设置为false；暂只支持http/https
         /// </summary>
-        public bool ResolveServiceName { get; set; } = true;
+        public EnumResolveServiceName ResolveServiceName { get; set; }
 
         /// <summary>
         /// 调用路径
@@ -38,8 +38,20 @@ namespace CobMvc.Core
         public string Transport { get; set; }
 
         /// <summary>
-        /// 超时时间（秒）。为0或null时使用全局设置
+        /// 超时时间（秒）。为0时使用全局设置
         /// </summary>
         public float Timeout { get; set; }
+    }
+
+    public enum EnumResolveServiceName
+    {
+        /// <summary>
+        /// 处理为ResolveServiceName
+        /// </summary>
+        NotSet = 0,
+
+        ResolveServiceName = 1,
+
+        KeepServiceName = 2
     }
 }

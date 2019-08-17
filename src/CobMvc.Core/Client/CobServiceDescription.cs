@@ -21,6 +21,23 @@ namespace CobMvc.Core.Client
         }
 
         /// <summary>
+        /// 设置默认值
+        /// </summary>
+        internal void EnsureValue()
+        {
+            if(ResolveServiceName == EnumResolveServiceName.NotSet)
+                ResolveServiceName = EnumResolveServiceName.ResolveServiceName;
+
+            if(string.IsNullOrWhiteSpace(Transport))
+                Transport = CobRequestTransports.Http;
+
+            //Formatter = "";
+
+            if (RetryTimes <= 0)
+                RetryTimes = 3;
+        }
+
+        /// <summary>
         /// 服务名
         /// </summary>
         public string ServiceName { get; set; }
@@ -28,7 +45,7 @@ namespace CobMvc.Core.Client
         /// <summary>
         /// 将服务名替换为服务发现中的Host，默认当作true。如需使用sidecar等代理模式请设置为false
         /// </summary>
-        public bool? ResolveServiceName { get; set; }
+        public EnumResolveServiceName ResolveServiceName { get; set; }
 
         /// <summary>
         /// 访问路径
@@ -75,7 +92,7 @@ namespace CobMvc.Core.Client
         private static ConcurrentDictionary<string, string> _serviceNameAddr = new ConcurrentDictionary<string, string>();
         protected string ResolveAddress(ServiceInfo service)
         {
-            if((ResolveServiceName ?? true) == false)
+            if(ResolveServiceName == EnumResolveServiceName.KeepServiceName)
             {
                 if(!string.Equals(Transport, CobRequestTransports.Http, StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -152,9 +169,7 @@ namespace CobMvc.Core.Client
 
             //AssignByValidValue(this.Formatter, refer.Formatter, v => Formatter = v);
 
-            //AssignByValidValue(this.ResolveServiceName, refer.ResolveServiceName, v => ResolveServiceName = v);
-            if (this.ResolveServiceName == null && refer.ResolveServiceName != null)
-                this.ResolveServiceName = refer.ResolveServiceName;
+            AssignByValidValue(this.ResolveServiceName, refer.ResolveServiceName, v => ResolveServiceName = v);
 
 
             if (HasValue(refer.Filters))
@@ -327,8 +342,9 @@ namespace CobMvc.Core.Client
 
             //CobServiceAttribute
             ParseCobService(attrs, false, out CobServiceClassDescription global);
+            global.EnsureValue();
 
-            foreach(var method in targetType.GetMethods())
+            foreach (var method in targetType.GetMethods())
             {
                 attrs = method.GetCustomAttributes(false);
                 if(ParseCobService(attrs, true, out CobServiceActionDescription item) && item != null)
