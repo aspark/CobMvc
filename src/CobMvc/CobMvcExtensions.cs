@@ -75,14 +75,15 @@ namespace CobMvc
             if (string.IsNullOrWhiteSpace(options.ServiceAddress))
             {
                 var addr = mvcBuilder.ServerFeatures.Get<IServerAddressesFeature>();
-                if(addr.Addresses.Any())
+                if (addr.Addresses.Any())
                 {
                     options.ServiceAddress = addr.Addresses.First();
                     Console.WriteLine($"use addr:{options.ServiceAddress} from server feature");
-#if !DEBUG
-                    options.ServiceAddress = NetHelper.ChangeToExternal(options.ServiceAddress);
-                    Console.WriteLine($"convert addr to external: {options.ServiceAddress}");
-#endif
+                    if (!options.EnableDevMode)
+                    {
+                        options.ServiceAddress = NetHelper.ChangeToExternal(options.ServiceAddress);
+                        Console.WriteLine($"convert addr to external: {options.ServiceAddress}");
+                    }
                 }
             }
 

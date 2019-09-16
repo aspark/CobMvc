@@ -26,6 +26,16 @@ namespace CobMvc.Core
         /// 使用自定义的参数绑定，以支持多强类型参数action
         /// </summary>
         public bool EnableCobMvcParametersBinder { get; set; } = false;
+
+        /// <summary>
+        /// 启用开发模式后，不会解析localhost为ip
+        /// </summary>
+        public bool EnableDevMode { get; set; }
+#if DEBUG
+        = true;
+#else
+        = false;
+#endif
     }
 
     public class CobMvcRequestOptions
