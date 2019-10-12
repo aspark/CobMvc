@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -10,7 +10,7 @@
     <RepositoryUrl>https://github.com/aspark/CobMvc</RepositoryUrl>
     <PackageTags>microservice asp.net core mvc</PackageTags>
     <Copyright>MIT</Copyright>
-    <Version>0.1.0-rc</Version>
+    <Version>0.2.0-beta</Version>
     <PackageId>CobMvc.Core</PackageId>
     <Product>CobMvc.Core</Product>
   </PropertyGroup>

@@ -9,7 +9,7 @@ CobMvc基于asp..net core mvc开发，定位为一款简单、低侵入性的微
 ## 使用
 
 ```
-PM> Install-Package CobMvc -Version 0.0.1-alpha
+PM> Install-Package CobMvc -Version 0.2.0-beta
 ```
 
 ### 服务注册与发现
