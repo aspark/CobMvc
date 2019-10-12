@@ -8,6 +8,8 @@ using CobMvc.Core.Client;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using CobMvc.Core.Service;
+using Microsoft.Extensions.Configuration;
+using System.IO;
 
 namespace CobMvc.Test
 {
@@ -15,12 +17,20 @@ namespace CobMvc.Test
     {
         private ServiceInfo _service = new Core.Service.ServiceInfo() { Name = "name", Address = "http://cobmvc.test/" };
 
+        private IConfiguration GetConfiguration()
+        {
+            var builder = new ConfigurationBuilder();
+            builder.AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "config.json"));
+
+            return builder.Build();
+        }
+
         [Fact]
         public void TestGeneratorSimple()
         {
             var options = Options.Create(new CobMvcRequestOptions());
 
-            var desc = new CobServiceDescriptionGenerator(options).Create<ContractA>() as CobServiceClassDescription;
+            var desc = new CobServiceDescriptionGenerator(options, GetConfiguration()).Create<ContractA>() as CobServiceClassDescription;
 
             desc.ShouldNotBeNull();
             desc.ServiceName.ShouldBe(nameof(ContractA));
@@ -79,7 +89,7 @@ namespace CobMvc.Test
         {
             var options = Options.Create(new CobMvcRequestOptions());
 
-            var desc = new CobServiceDescriptionGenerator(options).Create<ContractB>() as CobServiceClassDescription;
+            var desc = new CobServiceDescriptionGenerator(options, GetConfiguration()).Create<ContractB>() as CobServiceClassDescription;
 
             desc.ShouldNotBeNull();
             desc.ServiceName.ShouldBe(nameof(ContractB));
@@ -145,6 +155,40 @@ namespace CobMvc.Test
         public class RequestFilter : CobRequestFilterAttribute
         {
             public string Name { get; set; }
+        }
+
+        [Fact]
+        public void TestGeneratorFromConfig()
+        {
+            var options = Options.Create(new CobMvcRequestOptions());
+
+            var desc = new CobServiceDescriptionGenerator(options, GetConfiguration()).Create<ContractC>() as CobServiceClassDescription;
+
+            desc.ShouldNotBeNull();
+            desc.ServiceName.ShouldBe("ConfigContractC");
+            desc.Path.ShouldBe("api/config");
+            desc.Transport.ShouldBe(CobRequestTransports.Http);
+            desc.Timeout.ShouldBe(TimeSpan.FromSeconds(5.2));
+            desc.ResolveServiceName.ShouldBe(EnumResolveServiceName.KeepServiceName);
+            desc.RetryTimes.ShouldBe(2);
+            desc.Filters.Length.ShouldBe(0);
+        }
+
+        //[CobService(nameof(ContractB), Path = "/api", ResolveServiceName = EnumResolveServiceName.KeepServiceName, Timeout = 10, Transport = CobRequestTransports.Http)]
+        [CobServiceFromConfig("services:ContractC")]
+        [CobRetryStrategy(Count = 2)]
+        public interface ContractC
+        {
+            [CobService(Path = "/sys/score", Timeout = 3, ResolveServiceName = EnumResolveServiceName.ResolveServiceName, Transport = CobRequestTransports.WebSocket)]
+            [CobRetryStrategy(Count = 3)]
+            [RequestFilter(Name = "2")]
+            [RequestFilter(Name = "3")]
+            int GetScore(int id);
+
+            Task<string> GetName(string id);
+
+            [RequestFilter(Name = "4")]
+            Task SaveChanged(Dto dto);
         }
     }
 }

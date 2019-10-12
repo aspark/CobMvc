@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using CobMvc.Core.Common;
 using System.Linq;
+using Microsoft.Extensions.Configuration;
 
 namespace CobMvc.Test
 {
@@ -78,7 +79,7 @@ namespace CobMvc.Test
             result.Factory = new CobClientProxyFactory(
                 requestResovler.Object,
                 serviceRegistration,
-                new CobServiceDescriptionGenerator(requestOptions),
+                new CobServiceDescriptionGenerator(requestOptions, new ConfigurationBuilder().Build()),
                 new LoggerFactory(),
                 contextAccessor,
                 requestOptions);

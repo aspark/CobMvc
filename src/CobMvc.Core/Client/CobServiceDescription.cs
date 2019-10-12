@@ -1,5 +1,6 @@
 ﻿using CobMvc.Core.Common;
 using CobMvc.Core.Service;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
@@ -316,10 +317,12 @@ namespace CobMvc.Core.Client
     public class CobServiceDescriptionGenerator : ICobServiceDescriptionGenerator
     {
         CobMvcRequestOptions _requestOptions;
+        IConfiguration _configuration;
 
-        public CobServiceDescriptionGenerator(IOptions<CobMvcRequestOptions> requestOptions)
+        public CobServiceDescriptionGenerator(IOptions<CobMvcRequestOptions> requestOptions, IConfiguration configuration)
         {
             _requestOptions = requestOptions.Value;
+            _configuration = configuration;
         }
 
         private ConcurrentDictionary<Type, CobServiceClassDescription> _serviceDesc = new ConcurrentDictionary<Type, CobServiceClassDescription>();
@@ -341,13 +344,13 @@ namespace CobMvc.Core.Client
             var attrs = targetType.GetCustomAttributes(false);
 
             //CobServiceAttribute
-            ParseCobService(attrs, false, out CobServiceClassDescription global);
+            ParseCobService(attrs, false, true, out CobServiceClassDescription global);
             global.EnsureValue();
 
             foreach (var method in targetType.GetMethods())
             {
                 attrs = method.GetCustomAttributes(false);
-                if(ParseCobService(attrs, true, out CobServiceActionDescription item) && item != null)
+                if(ParseCobService(attrs, true, false, out CobServiceActionDescription item) && item != null)
                 {
                     //合并方法与全局配置
                     item.Refer(global);
@@ -359,12 +362,34 @@ namespace CobMvc.Core.Client
             return global;
         }
 
-        private bool ParseCobService<T>(object[] attrs, bool allowMiss, out T desc) where T: CobServiceDescription, new()
+        private bool ParseCobService<T>(object[] attrs, bool allowMiss, bool allowConfig, out T desc) where T: CobServiceDescription, new()
         {
             desc = new T();
 
+            object attr = null;
+            CobServiceAttribute configService = null;
+
             //服务配置
-            var attr = attrs.FirstOrDefault(a => a is CobServiceAttribute);
+            if (allowConfig)
+            {
+                attr = attrs.FirstOrDefault(a => a is CobServiceFromConfigAttribute);
+                if(attr != null)
+                {
+                    var config = attr as CobServiceFromConfigAttribute;
+
+                    if(_configuration == null || !_configuration.GetSection(config.SectionKey).Exists())
+                    {
+                        throw new Exception($"configuration is null or {config.SectionKey} section is not exists");
+                    }
+
+                    configService = _configuration.GetSection(config.SectionKey).Get<CobServiceAttribute>();
+                }
+
+            }
+
+            //有配置后，忽略attr中的配置
+            //todo:还是用config的覆盖attr
+            attr = configService ?? attrs.FirstOrDefault(a => a is CobServiceAttribute);
             if (attr == null && !allowMiss)
             {
                 throw new InvalidOperationException($"missing global CobServiceAttribute for interface/class");
