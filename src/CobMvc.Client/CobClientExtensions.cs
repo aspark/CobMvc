@@ -8,7 +8,10 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+
+[assembly: InternalsVisibleTo("CobMvc.Test")]
 
 namespace CobMvc.Client
 {
@@ -44,6 +47,7 @@ namespace CobMvc.Client
                         builder.SetMinimumLevel(LogLevel.Trace);
                     });
             }
+
             services.TryAddSingleton<IServiceRegistration, InMemoryServiceRegistration>();
             services.TryAddSingleton<ICobClientFactory, CobClientProxyFactory>();
             services.AddSingleton<ICobRequest, HttpClientCobRequest>();

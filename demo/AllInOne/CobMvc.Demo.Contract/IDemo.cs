@@ -8,8 +8,9 @@ using System.Threading.Tasks;
 
 namespace CobMvc.Demo.Contract
 {
-    [CobService("CobMvcDemo", Path ="/api/test/", Transport = CobRequestTransports.WebSocket, Timeout = 1)]
+    [CobService("CobMvcDemo", Path ="/api/test/")]//, Timeout = 1, Transport = CobRequestTransports.WebSocket
     [CobRetryStrategy(Count = 5, Exceptions = new[] { typeof(TimeoutException), typeof(Exception) })]
+    [AuthRequestFilter]
     public interface IDemo
     {
         [CobService(Path = "/api/GetNames")]
@@ -21,7 +22,10 @@ namespace CobMvc.Demo.Contract
         Task<UserInfo> GetUserInfo(string name);
 
         //
-        Task SaveUserInfo(UserInfo user);
+        Task SaveUserInfo(int operatorID, UserInfo user);
+
+        //
+        Task SaveUserInfo2(int operatorID, UserInfo user1, UserInfo user2);
 
         void Mark(int ms);
 
@@ -36,5 +40,18 @@ namespace CobMvc.Demo.Contract
         public string Name { get; set; }
 
         public string Addr { get; set; }
+    }
+
+    /// <summary>
+    /// 模拟添加token校验
+    /// </summary>
+    public class AuthRequestFilter: CobRequestFilterAttribute
+    {
+        public override void OnBeforeRequest(CobRequestContext context)
+        {
+            //base.OnBeforeRequest(context);
+            context.Parameters["t"] = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
+            context.Extensions["x-token"] = "token-abc";
+        }
     }
 }

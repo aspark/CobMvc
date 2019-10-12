@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CobMvc.Core.Attributes
+namespace CobMvc.Core
 {
     /// <summary>
     /// 从Configuration中加载配置
     /// </summary>
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, AllowMultiple = false)]
-    public class CobServiceConfigAttribute : Attribute
+    public class CobServiceFromConfigAttribute : Attribute
     {
-        public CobServiceConfigAttribute(string sectionKey)
+        public CobServiceFromConfigAttribute(string sectionKey)
         {
             SectionKey = sectionKey;
         }

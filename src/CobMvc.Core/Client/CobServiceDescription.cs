@@ -1,5 +1,7 @@
 ﻿using CobMvc.Core.Common;
 using CobMvc.Core.Service;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,17 +14,39 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 通用服务调用描述
     /// </summary>
-    public class CobServiceDescription// : ICloneable
+    public abstract class CobServiceDescription// : ICloneable
     {
         public CobServiceDescription()
         {
+            Filters = new ICobRequestFilter[0];
+        }
 
+        /// <summary>
+        /// 设置默认值
+        /// </summary>
+        internal void EnsureValue()
+        {
+            if(ResolveServiceName == EnumResolveServiceName.NotSet)
+                ResolveServiceName = EnumResolveServiceName.ResolveServiceName;
+
+            if(string.IsNullOrWhiteSpace(Transport))
+                Transport = CobRequestTransports.Http;
+
+            //Formatter = "";
+
+            if (RetryTimes <= 0)
+                RetryTimes = 3;
         }
 
         /// <summary>
         /// 服务名
         /// </summary>
         public string ServiceName { get; set; }
+
+        /// <summary>
+        /// 将服务名替换为服务发现中的Host，默认当作true。如需使用sidecar等代理模式请设置为false
+        /// </summary>
+        public EnumResolveServiceName ResolveServiceName { get; set; }
 
         /// <summary>
         /// 访问路径
@@ -64,6 +88,36 @@ namespace CobMvc.Core.Client
         /// </summary>
         public Type[] RetryExceptionTypes { get; set; }
 
+        public ICobRequestFilter[] Filters { get; set; }
+
+        private static ConcurrentDictionary<string, string> _serviceNameAddr = new ConcurrentDictionary<string, string>();
+        protected string ResolveAddress(ServiceInfo service)
+        {
+            if(ResolveServiceName == EnumResolveServiceName.KeepServiceName)
+            {
+                if(!string.Equals(Transport, CobRequestTransports.Http, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    throw new Exception("ResolveServiceName noly support http/https transport");
+                }
+
+                return _serviceNameAddr.GetOrAdd(service.Name, k => {
+                    var builder = new UriBuilder(service.Address);
+
+                    //去除host port等信息
+                    builder.Host = service.Name;
+
+                    if(string.Equals(builder.Scheme, "https", StringComparison.InvariantCultureIgnoreCase))
+                        builder.Port = 443;
+                    else
+                        builder.Port = 80;
+
+                    return builder.Uri.ToString();
+                });
+            }
+
+            return service.Address;
+        }
+
         /// <summary>
         /// 根据服务获取调用的地址
         /// </summary>
@@ -72,7 +126,7 @@ namespace CobMvc.Core.Client
         /// <returns></returns>
         public virtual string GetUrl(ServiceInfo service, string action)
         {
-            return GetUrl(service.Address, Path, action);//?.ToString() ?? ""
+            return GetUrl(ResolveAddress(service), Path, action);//?.ToString() ?? ""
         }
 
         protected string GetUrl(params string[] paths)
@@ -98,7 +152,7 @@ namespace CobMvc.Core.Client
         /// </summary>
         /// <param name="refer"></param>
         /// <returns></returns>
-        public virtual CobServiceDescription Refer(CobServiceDescription refer)
+        internal protected virtual CobServiceDescription Refer(CobServiceDescription refer)
         {
             AssignByValidValue(this.ServiceName, refer.ServiceName, v => ServiceName = v);
 
@@ -115,6 +169,12 @@ namespace CobMvc.Core.Client
                 this.RetryExceptionTypes = (this.RetryExceptionTypes ?? new Type[0]).Concat(refer.RetryExceptionTypes).ToArray();
 
             //AssignByValidValue(this.Formatter, refer.Formatter, v => Formatter = v);
+
+            AssignByValidValue(this.ResolveServiceName, refer.ResolveServiceName, v => ResolveServiceName = v);
+
+
+            if (HasValue(refer.Filters))
+                this.Filters = refer.Filters.Concat(this.Filters ?? new ICobRequestFilter[0]).ToArray();//refer的filter在方法的前面
 
             return this;
         }
@@ -171,7 +231,7 @@ namespace CobMvc.Core.Client
     /// </summary>
     public class CobServiceClassDescription : CobServiceTypeDescription
     {
-        public ConcurrentDictionary<MethodInfo, TypedCobActionDescription> ActionDescriptors { get; private set; } = new ConcurrentDictionary<MethodInfo, TypedCobActionDescription>();
+        public ConcurrentDictionary<MethodInfo, CobServiceActionDescription> ActionDescriptors { get; private set; } = new ConcurrentDictionary<MethodInfo, CobServiceActionDescription>();
 
         public CobServiceTypeDescription GetActionOrTypeDesc(MethodInfo action)
         {
@@ -211,7 +271,7 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 方法描述
     /// </summary>
-    public class TypedCobActionDescription : CobServiceTypeDescription
+    public class CobServiceActionDescription : CobServiceTypeDescription
     {
         public CobServiceDescription Parent { get; internal set; }
 
@@ -219,7 +279,9 @@ namespace CobMvc.Core.Client
         
         public string GetUrl(ServiceInfo service)
         {
-            return !string.IsNullOrWhiteSpace(Path) ? base.GetUrl(service.Address, Path) : Parent.GetUrl(service, Method.Name);
+            var url = !string.IsNullOrWhiteSpace(Path) ? base.GetUrl(ResolveAddress(service), Path) : Parent.GetUrl(service, Method.Name);
+
+            return url;
         }
 
         public override string GetUrl(ServiceInfo service, string action)//忽略action
@@ -234,7 +296,7 @@ namespace CobMvc.Core.Client
             return GetUrl(service);
         }
 
-        public override CobServiceDescription Refer(CobServiceDescription refer)
+        internal protected override CobServiceDescription Refer(CobServiceDescription refer)
         {
             this.Parent = refer;
 
@@ -245,15 +307,23 @@ namespace CobMvc.Core.Client
     /// <summary>
     /// 根据Type生成服务的描述
     /// </summary>
-    public interface ICobServiceDescriptorGenerator
+    public interface ICobServiceDescriptionGenerator
     {
         //TypedCobServiceDescriptor Create<T>() where T : class;
 
         CobServiceClassDescription Create(Type type);
     }
 
-    public class CobServiceDescriptorGenerator : ICobServiceDescriptorGenerator
+    public class CobServiceDescriptionGenerator : ICobServiceDescriptionGenerator
     {
+        CobMvcRequestOptions _requestOptions;
+        IConfiguration _configuration;
+
+        public CobServiceDescriptionGenerator(IOptions<CobMvcRequestOptions> requestOptions, IConfiguration configuration)
+        {
+            _requestOptions = requestOptions.Value;
+            _configuration = configuration;
+        }
 
         private ConcurrentDictionary<Type, CobServiceClassDescription> _serviceDesc = new ConcurrentDictionary<Type, CobServiceClassDescription>();
 
@@ -274,12 +344,13 @@ namespace CobMvc.Core.Client
             var attrs = targetType.GetCustomAttributes(false);
 
             //CobServiceAttribute
-            ParseCobService(attrs, false, out CobServiceClassDescription global);
+            ParseCobService(attrs, false, true, out CobServiceClassDescription global);
+            global.EnsureValue();
 
-            foreach(var method in targetType.GetMethods())
+            foreach (var method in targetType.GetMethods())
             {
                 attrs = method.GetCustomAttributes(false);
-                if(ParseCobService(attrs, true, out TypedCobActionDescription item) && item != null)
+                if(ParseCobService(attrs, true, false, out CobServiceActionDescription item) && item != null)
                 {
                     //合并方法与全局配置
                     item.Refer(global);
@@ -291,12 +362,34 @@ namespace CobMvc.Core.Client
             return global;
         }
 
-        private bool ParseCobService<T>(object[] attrs, bool allowMiss, out T desc) where T: CobServiceDescription, new()
+        private bool ParseCobService<T>(object[] attrs, bool allowMiss, bool allowConfig, out T desc) where T: CobServiceDescription, new()
         {
             desc = new T();
 
+            object attr = null;
+            CobServiceAttribute configService = null;
+
             //服务配置
-            var attr = attrs.FirstOrDefault(a => a is CobServiceAttribute);
+            if (allowConfig)
+            {
+                attr = attrs.FirstOrDefault(a => a is CobServiceFromConfigAttribute);
+                if(attr != null)
+                {
+                    var config = attr as CobServiceFromConfigAttribute;
+
+                    if(_configuration == null || !_configuration.GetSection(config.SectionKey).Exists())
+                    {
+                        throw new Exception($"configuration is null or {config.SectionKey} section is not exists");
+                    }
+
+                    configService = _configuration.GetSection(config.SectionKey).Get<CobServiceAttribute>();
+                }
+
+            }
+
+            //有配置后，忽略attr中的配置
+            //todo:还是用config的覆盖attr
+            attr = configService ?? attrs.FirstOrDefault(a => a is CobServiceAttribute);
             if (attr == null && !allowMiss)
             {
                 throw new InvalidOperationException($"missing global CobServiceAttribute for interface/class");
@@ -308,9 +401,10 @@ namespace CobMvc.Core.Client
                 var service = attr as CobServiceAttribute;
 
                 desc.ServiceName = service.ServiceName;
+                desc.ResolveServiceName = service.ResolveServiceName;
                 desc.Path = service.Path;
                 desc.Transport = service.Transport;
-                desc.Timeout = service.Timeout > 0 ? TimeSpan.FromSeconds(service.Timeout) : TimeSpan.FromSeconds(30);//todo:超时可配置
+                desc.Timeout = service.Timeout > 0 ? TimeSpan.FromSeconds(service.Timeout) : TimeSpan.FromSeconds(_requestOptions.DefaultTimeout);//超时
 
                 hasConfig = true;
             }
@@ -325,6 +419,15 @@ namespace CobMvc.Core.Client
                 desc.RetryExceptionTypes = strategy.Exceptions;
                 desc.FallbackValue = strategy.FallbackValue;
                 desc.FallbackHandler = strategy.FallbackHandler;
+
+                hasConfig = true;
+            }
+
+            //过滤器
+            var filters = attrs.Where(a => a is ICobRequestFilter);
+            if(filters.Any())
+            {
+                desc.Filters = filters.Cast<ICobRequestFilter>().OrderBy(f => f.Order).ToArray();
 
                 hasConfig = true;
             }

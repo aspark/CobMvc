@@ -25,7 +25,8 @@ namespace CobMvc.Core
             
         }
 
-        public Guid TraceID {
+        public Guid TraceID
+        {
             get
             {
                 return (Guid)GetOrAddProperty(CobMvcDefaults.HeaderTraceID, () => Guid.NewGuid());
@@ -33,6 +34,18 @@ namespace CobMvc.Core
             set
             {
                 SetProperty(CobMvcDefaults.HeaderTraceID, value);
+            }
+        }
+
+        public int Jump
+        {
+            get
+            {
+                return (int)GetOrAddProperty(CobMvcDefaults.HeaderJump, () => 0);
+            }
+            set
+            {
+                SetProperty(CobMvcDefaults.HeaderJump, value);
             }
         }
 

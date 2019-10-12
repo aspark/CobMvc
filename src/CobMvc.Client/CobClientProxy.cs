@@ -6,6 +6,7 @@ using CobMvc.Core.Service;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -25,14 +26,19 @@ namespace CobMvc.Client
         ICobServiceSelector _selector = null;
         ILoggerFactory _loggerFactory = null;
         ILogger _logger = null;
+        ICobMvcContextAccessor _contextAccessor = null;
+        IOptions<CobMvcRequestOptions> _requestOptions;
 
-        public CobClientProxy(ICobRequestResolver requestResolver, CobServiceClassDescription typeDesc, IServiceRegistration serviceDiscovery, ILoggerFactory loggerFactory)
+        public CobClientProxy(ICobRequestResolver requestResolver, CobServiceClassDescription typeDesc, IServiceRegistration serviceDiscovery, 
+            ILoggerFactory loggerFactory, ICobMvcContextAccessor contextAccessor, IOptions<CobMvcRequestOptions> requestOptions)
         {
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<CobClientProxy>();
             _typeDesc = typeDesc;
             _requestResolver = requestResolver;//change request by service descriptor
             _selector = new DefaultServiceSelector(serviceDiscovery, _typeDesc.ServiceName, _loggerFactory.CreateLogger<DefaultServiceSelector>());
+            _contextAccessor = contextAccessor;
+            _requestOptions = requestOptions;
         }
 
         public void Intercept(IInvocation invocation)
@@ -48,15 +54,46 @@ namespace CobMvc.Client
                 parameters[names[i]] = invocation.Arguments[i];
             }
 
-            using (var env = new ServiceExecutionEnv(_loggerFactory, _selector))
+            using (var env = new ServiceExecutionEnv(_loggerFactory, _selector, _requestOptions))
             {
                 var desc = _typeDesc.GetActionOrTypeDesc(invocation.Method);
 
-                invocation.ReturnValue = env.Execute(invocation.Method.ReturnType, desc, service => {
-                    var url = desc.GetUrl(service, invocation.Method);
-                    var ctx = new TypedCobRequestContext() { ServiceName = desc.ServiceName, TargetAddress = service.Address, Url = url, Parameters = parameters, ReturnType = invocation.Method.ReturnType, Method = invocation.Method };//, Timeout = desc.Timeout
+                invocation.ReturnValue = env.Execute(invocation.Method.ReturnType, desc, async service =>
+                {
+                    //try
+                    //{
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    return Task.FromException<object>(ex.GetInnerException());
+                    //}
 
-                    return _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
+                    var url = desc.GetUrl(service, invocation.Method);
+                    var ctx = new TypedCobRequestContext()
+                    {
+                        ServiceName = desc.ServiceName,
+                        TargetAddress = service.Address,
+                        Url = url,
+                        Parameters = new Dictionary<string, object>(parameters),
+                        ReturnType = invocation.Method.ReturnType,
+                        Method = invocation.Method
+                    };//, Timeout = desc.Timeout
+
+                    //设置请求头
+                    ctx.Extensions = new Dictionary<string, string>()
+                        {
+                            { CobMvcDefaults.HeaderUserAgent, $"{CobMvcDefaults.UserAgentValue}/{CobMvcDefaults.HeaderUserVersion}" },
+                            { CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString() },
+                            { CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString() }
+                        };
+
+                    if (desc.Filters != null)
+                    {
+                        desc.Filters.ForEach(f => f.OnBeforeRequest(ctx));
+                    }
+
+                    return await _requestResolver.Get(desc.Transport).DoRequest(ctx, null);
+
                 }, invocation.Method, parameters);
             }
         }
@@ -72,12 +109,14 @@ namespace CobMvc.Client
         ILogger _logger = null;
         //CobServiceDescription _desc = null;
         ICobServiceSelector _selector = null;
+        CobMvcRequestOptions _requestOptions;
 
-        public ServiceExecutionEnv(ILoggerFactory loggerFactory, ICobServiceSelector selector)/*CobServiceDescription desc, */
+        public ServiceExecutionEnv(ILoggerFactory loggerFactory, ICobServiceSelector selector, IOptions<CobMvcRequestOptions> requestOptions)/*CobServiceDescription desc, */
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<ServiceExecutionEnv>();
             _selector = selector;
+            _requestOptions = requestOptions.Value;
         }
 
 
@@ -172,6 +211,9 @@ namespace CobMvc.Client
 
         #region 都转为Task执行
 
+        /// <summary>
+        /// 包状代理，添加重试、超时等机制
+        /// </summary>
         public object Execute(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task<object>> action, MethodInfo method = null, Dictionary<string, object> parameters = null)
         {
             Func<ServiceInfo, Task> asyncAction = action;
@@ -180,8 +222,9 @@ namespace CobMvc.Client
             if (desc.Timeout.TotalSeconds > 0)
             {
                 asyncAction = s => {
-                    var taskTimeout = Task.Delay(desc.Timeout.TotalSeconds > 0 ? desc.Timeout : TimeSpan.FromSeconds(30));//不为空且大于0的超时时间
+                    var taskTimeout = Task.Delay(desc.Timeout.TotalSeconds > 0 ? desc.Timeout : TimeSpan.FromSeconds(_requestOptions.DefaultTimeout));//不为空且大于0的超时时间
                     var taskOriginal = action(s);
+
                     var taskWrapped = Task.WhenAny(taskOriginal, taskTimeout).ContinueWith(t =>
                     {
                         if (t.Result == taskTimeout && taskOriginal.Status < TaskStatus.Running)
@@ -189,7 +232,14 @@ namespace CobMvc.Client
                             throw new TimeoutException();
                         }
 
-                        return taskOriginal.Result;
+                        var result = taskOriginal.Result;
+
+                        if (desc.Filters != null)
+                        {
+                            desc.Filters.ForEach(f => f.OnAfterResponse(method, result));
+                        }
+
+                        return result;
                     });
 
                     return taskWrapped;
@@ -203,9 +253,9 @@ namespace CobMvc.Client
         private static ConcurrentDictionary<Type, ICobFallbackHandler> _fallbackHandlers = new ConcurrentDictionary<Type, ICobFallbackHandler>();
         private object ExecuteAsync(Type returnType, CobServiceDescription desc, Func<ServiceInfo, Task> action, MethodInfo method = null, Dictionary<string, object> parameters = null)
         {
-            var retry = new ServiceTaskRetry(_loggerFactory, _selector, desc.RetryTimes, desc.RetryExceptionTypes);
+            var retry = new ServiceTaskRetryContainer(_loggerFactory, _selector, desc.RetryTimes, desc.RetryExceptionTypes);
 
-            var taskResult = retry.ExecuteRaw(action).ContinueWith(t => {
+            var taskResult = retry.RunForResult(action).ContinueWith(t => {
                 foreach(var item in t.Result)
                 {
                     if (item.Service != null)
@@ -256,7 +306,7 @@ namespace CobMvc.Client
             }
             else if (realType != null)
             {
-                return taskResult.ConfigureAwait(false).GetAwaiter().GetResult();
+                return taskResult.ConfigureAwait(false).GetAwaiter().GetResult();//todo:在beforeRequest时抛出异常，这里就会一直等待？
             }
 
             return null;//todo:change to default(T) ??
@@ -270,7 +320,7 @@ namespace CobMvc.Client
         }
 
         //action重试辅助类
-        private class ServiceTaskRetry : IDisposable
+        private class ServiceTaskRetryContainer : IDisposable
         {
             ILogger _logger = null;
             TaskCompletionSource<TaskRetryResult>[] _waiters = null;
@@ -279,7 +329,7 @@ namespace CobMvc.Client
             int _maxTimes = 1;
             HashSet<Type> _exceptionTypes = null;
 
-            public ServiceTaskRetry(ILoggerFactory loggerFactory, ICobServiceSelector selector, int times, Type[] exceptionTypes)
+            public ServiceTaskRetryContainer(ILoggerFactory loggerFactory, ICobServiceSelector selector, int times, Type[] exceptionTypes)
             {
                 _logger = loggerFactory.CreateLogger<ServiceExecutionEnv>();
                 _selector = selector;
@@ -291,16 +341,16 @@ namespace CobMvc.Client
                     _waiters[i] = new TaskCompletionSource<TaskRetryResult>();
             }
 
-            public Task<TaskRetryResult[]> ExecuteRaw(Func<ServiceInfo, Task> action)
+            public Task<TaskRetryResult[]> RunForResult(Func<ServiceInfo, Task> action)
             {
                 ExecuteImpl(action);
 
                 return Task.WhenAll(_waiters.Select(t => t.Task));
             }
 
-            public Task<object> Execute(Func<ServiceInfo, Task> action)
+            public Task<object> Run(Func<ServiceInfo, Task> action)
             {
-                return ExecuteRaw(action).ContinueWith(t => {
+                return RunForResult(action).ContinueWith(t => {
                     if (t.Result != null)
                     {
                         var result = t.Result.FirstOrDefault(i => i.Exception == null);
@@ -342,7 +392,8 @@ namespace CobMvc.Client
                                 //_waiters[index].TrySetException(t.Exception);
                                 var ex = t.Exception.GetInnerException();//.GetBaseException();
                                 result = new TaskRetryResult(service, ex);
-                                if (_exceptionTypes.Count == 0 || _exceptionTypes.Contains(ex.GetType()))
+                                var exType = ex.GetType();
+                                if (_exceptionTypes.Count == 0 || _exceptionTypes.Contains(ex.GetType()) || _exceptionTypes.Any(e => e.IsAssignableFrom(exType)))
                                 {
                                     _waiters[index].SetResult(result);
 
@@ -425,18 +476,21 @@ namespace CobMvc.Client
         ICobServiceSelector _selector = null;
         //ILogger _logger = null;
         ILoggerFactory _loggerFactory = null;
+        IOptions<CobMvcRequestOptions> _requestOptions;
 
-        public CobCommonClientProxy(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, CobServiceDescription desc, ILoggerFactory loggerFactory)
+        public CobCommonClientProxy(ICobRequestResolver requestResolver, IServiceRegistration serviceDiscovery, CobServiceDescription desc, 
+            ILoggerFactory loggerFactory, IOptions<CobMvcRequestOptions> requestOptions)
         {
             _desc = desc;
             _requestResolver = requestResolver;
             _loggerFactory = loggerFactory;
             _selector = new DefaultServiceSelector(serviceDiscovery, _desc.ServiceName, loggerFactory?.CreateLogger<DefaultServiceSelector>());
+            _requestOptions = requestOptions;
         }
 
         public T Invoke<T>(string action, Dictionary<string, object> parameters, object state)
         {
-            using (var env = new ServiceExecutionEnv(_loggerFactory, _selector))
+            using (var env = new ServiceExecutionEnv(_loggerFactory, _selector, _requestOptions))
             {
                 return (T)env.Execute(typeof(T), _desc, service => {
                     var url = _desc.GetUrl(service, action);

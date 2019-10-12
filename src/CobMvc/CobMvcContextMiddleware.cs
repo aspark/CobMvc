@@ -1,6 +1,7 @@
 ﻿using CobMvc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,21 +9,34 @@ using System.Threading.Tasks;
 
 namespace CobMvc
 {
-    internal class CobMvcMiddleware : IMiddleware
+    internal class CobMvcContextMiddleware : IMiddleware
     {
+        CobMvcOptions _options = null;
         ICobMvcContextAccessor _contextAccessor = null;
-        ILogger<CobMvcMiddleware> _logger = null;
+        ILogger<CobMvcContextMiddleware> _logger = null;
 
-        public CobMvcMiddleware(ICobMvcContextAccessor contextAccessor, ILogger<CobMvcMiddleware> logger)
+        public CobMvcContextMiddleware(IOptions<CobMvcOptions> options, ICobMvcContextAccessor contextAccessor, ILogger<CobMvcContextMiddleware> logger)
         {
+            _options = options.Value;
             _logger = logger;
             _contextAccessor = contextAccessor;
         }
 
         public Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
+            //最长链路限制
+            var jump = 0;
+            if (context.Request.Headers.ContainsKey(CobMvcDefaults.HeaderJump))
+            {
+                jump = int.Parse(context.Request.Headers[CobMvcDefaults.HeaderJump]);
+            }
 
-            //todo:最长链路限制
+            if (jump > _options.MaxJump)
+            {
+                throw new Exception($"exceed max jump:{_options.MaxJump}");
+            }
+            
+            _contextAccessor.Current.Jump = jump;
 
             //为所有进入的请求添加TraceID等信息
             Guid traceID;

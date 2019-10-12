@@ -14,6 +14,7 @@ using CobMvc.Consul;
 using System.Text;
 using System.Threading;
 using CobMvc.WebSockets;
+using CobMvc.Core;
 
 namespace CobMvc.Demo
 {
@@ -32,11 +33,13 @@ namespace CobMvc.Demo
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
                 .AddCobMvc(cob => {
-                    cob.ConfigureOptions(opt=> {
+                    cob.ConfigureOptions(opt => {
                         opt.ServiceName = "CobMvcDemo";
                         //opt.ServiceAddress = "http://localhost:54469";//改为console随机端口
                         //opt.HealthCheck = "/api/test/Health";
+                        opt.EnableCobMvcParametersBinder = true;
                     });
+                    cob.Configure<CobMvcRequestOptions>(opt => opt.MaxConnetions = 300);
                     cob.AddConsul(opt=> {
                         opt.Address = new Uri("http://localhost:8500");
                     });

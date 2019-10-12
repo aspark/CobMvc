@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using CobMvc.Core;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -11,6 +12,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace CobMvc.WebSockets.HttpFake
 {
@@ -113,18 +116,36 @@ namespace CobMvc.WebSockets.HttpFake
                 context.Request.Headers.Remove("Content-Type");
                 context.Request.Headers.Add("Content-Type", "application/json");
 
+                foreach(var prop in request.Properties)
+                {
+                    if (prop.Key == CobMvcDefaults.UserAgentValue)
+                    {
+                        context.Request.Headers["User-Agent"] = prop.Value;
+
+                        continue;
+                    }
+
+                    context.Request.Headers[prop.Key] = prop.Value;
+                }
+
                 var ms = context.Request.Body = new MemoryStream();
                 using (var sw = new StreamWriter(ms, new UTF8Encoding(false), 512, true))
                 {
                     if (properties.Count == 1)
                     {
-                        sw.Write(JsonConvert.SerializeObject(properties[0].GetValue(request.Params)));
+                        sw.Write(JsonConvert.SerializeObject(properties[0].GetValue(request.Params)));//
                     }
                     else
                     {
-                        sw.Write(JsonConvert.SerializeObject(request.Params));
+                        if (properties.Count > 1 && !entryContext.RequestServices.GetRequiredService<IOptions<CobMvcOptions>>().Value.EnableCobMvcParametersBinder)
+                        {
+                            throw new Exception("find many parameters from body, please set CobMvcOptions.EnableCobMvcParametersBinder");
+                        }
+
+                        sw.Write(JsonConvert.SerializeObject(request.Params));//todo:直接Pramas将放入Items，后面由自定义参数绑定赋值参数
                     }
                 }
+
                 ms.Position = 0;
             }
 

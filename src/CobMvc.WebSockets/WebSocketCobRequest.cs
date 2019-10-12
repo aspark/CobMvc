@@ -1,5 +1,6 @@
 ﻿using CobMvc.Core;
 using CobMvc.Core.Client;
+using CobMvc.Core.Common;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -11,13 +12,13 @@ using System.Threading.Tasks;
 
 namespace CobMvc.WebSockets
 {
-    internal class CobWebSocketClient : CobRequestBase
+    internal class WebSocketCobRequest : CobRequestBase
     {
         private ClientWebSocketPoolFactory _clientWebSocketPoolFactory = null;
         ICobMvcContextAccessor _contextAccessor = null;
-        ILogger<CobWebSocketClient> _logger = null;
+        ILogger<WebSocketCobRequest> _logger = null;
 
-        public CobWebSocketClient(ICobMvcContextAccessor contextAccessor, ILogger<CobWebSocketClient> logger, ClientWebSocketPoolFactory clientWebSocketPoolFactory)
+        public WebSocketCobRequest(ICobMvcContextAccessor contextAccessor, ILogger<WebSocketCobRequest> logger, ClientWebSocketPoolFactory clientWebSocketPoolFactory)
         {
             _logger = logger;
             _contextAccessor = contextAccessor;
@@ -65,28 +66,40 @@ namespace CobMvc.WebSockets
         {
             var url = context.Url;
 
-            var usePost = context.Method.GetParameters().Any(p => p.ParameterType.IsClass && p.ParameterType != typeof(string));
+            var usePost = context.Method.GetParameters().Any(p => !p.ParameterType.IsValueTypeOrString());
             var parameters = new Dictionary<string, object>(context.Parameters);
-            if (!usePost)
+            if (context.Parameters != null && context.Parameters.Any())
             {
-                if (context.Parameters != null && context.Parameters.Any())
+                var queries = context.Parameters.Where(p => p.Value != null && p.Value.IsValueTypeOrString()).ToArray();
+                if(queries.Length > 0)
                 {
-                    var query = string.Join("&", context.Parameters.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value?.ToString())}"));
+                    var query = string.Join("&", queries.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value?.ToString())}"));
                     if (url.Contains('?'))
                         url += "&";
                     else
                         url += "?";
 
                     url += query;
-                }
 
-                parameters.Clear();
+                    queries.ForEach(p => parameters.Remove(p.Key));
+                }
             }
 
             request.Method = url;//new Uri(url).PathAndQuery
             request.Params = parameters;
-            request.Properties.Add(CobMvcDefaults.UserAgent, "0.0.1");
-            request.Properties.Add(CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString());
+            //request.Properties.Add(CobMvcDefaults.UserAgentValue, $"{CobMvcDefaults.HeaderUserAgent}/{CobMvcDefaults.HeaderUserVersion}");
+            //request.Properties.Add(CobMvcDefaults.HeaderTraceID, _contextAccessor.Current.TraceID.ToString());
+            //request.Properties.Add(CobMvcDefaults.HeaderJump, (_contextAccessor.Current.Jump + 1).ToString());
+
+            if (context.Extensions != null)
+            {
+                //foreach (var ex in context.Extensions)
+                //{
+                //    request.Properties.Add(ex.Key, ex.Value);
+                //};
+                request.Properties = context.Extensions;
+            }
+
             _logger?.LogDebug("set request traceID:{0}", _contextAccessor.Current.TraceID);
 
             return true;

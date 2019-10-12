@@ -33,9 +33,12 @@ namespace CobMvc
 
             ServicesExtensions.EnsureServerServices(mvcBuilder.Services);
 
+            mvcBuilder.AddMvcOptions(opt => opt.Filters.AddService<CobMvcParametersBinder>());
+
             return mvcBuilder;
         }
 
+        [Obsolete]
         public static IMvcBuilder AddCobMvc(this IMvcBuilder mvcBuilder, Action<CobMvcOptions> options, Action<ICobMvc> setup)
         {
             return mvcBuilder.AddCobMvc(cob => {
@@ -46,10 +49,10 @@ namespace CobMvc
 
         public static IMvcBuilder AddCobMvc(this IMvcBuilder mvcBuilder)
         {
-            return mvcBuilder.AddCobMvc(cob=> { });
+            return mvcBuilder.AddCobMvc(cob => { });
         }
 
-        //public static IApplicationBuilder UseCobMvc<T>(this IApplicationBuilder mvcBuilder, Action<CobMvcStartupOptions> optionSetup = null)//, Action<CobMvcOptions> option
+        //public static IApplicationBuilder UseCobMvc<T>(this IApplicationBuilder mvcBuilder, Action<CobMvcStartupOptions> optionSetup = null)
         //{
         //    return mvcBuilder.UseCobMvc(opt=>
         //    {
@@ -72,14 +75,15 @@ namespace CobMvc
             if (string.IsNullOrWhiteSpace(options.ServiceAddress))
             {
                 var addr = mvcBuilder.ServerFeatures.Get<IServerAddressesFeature>();
-                if(addr.Addresses.Any())
+                if (addr.Addresses.Any())
                 {
                     options.ServiceAddress = addr.Addresses.First();
                     Console.WriteLine($"use addr:{options.ServiceAddress} from server feature");
-#if !DEBUG
-                    options.ServiceAddress = NetHelper.ChangeToExternal(options.ServiceAddress);
-                    Console.WriteLine($"convert addr to external: {options.ServiceAddress}");
-#endif
+                    if (!options.EnableDevMode)
+                    {
+                        options.ServiceAddress = NetHelper.ChangeToExternal(options.ServiceAddress);
+                        Console.WriteLine($"convert addr to external: {options.ServiceAddress}");
+                    }
                 }
             }
 
@@ -114,13 +118,14 @@ namespace CobMvc
                 };
             }
 
-            var logger = mvcBuilder.ApplicationServices.GetRequiredService<ILoggerFactory>().CreateLogger<CobMvcMiddleware>();
+            var logger = mvcBuilder.ApplicationServices.GetRequiredService<ILoggerFactory>().CreateLogger("CobMvcExtensions");
             logger.LogDebug("register service:{0}\t{1}", svcInfo.Name, svcInfo.Address);
 
             var reg = mvcBuilder.ApplicationServices.GetRequiredService<IServiceRegistration>();
             reg.Register(svcInfo);
 
-            mvcBuilder.UseMiddleware<CobMvcMiddleware>();
+            mvcBuilder.UseMiddleware<CobMvcContextMiddleware>();
+            //mvcBuilder.UseMiddleware<CobMvcParametersBinder>();
 
             //todo:deregister
 

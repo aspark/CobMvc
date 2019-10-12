@@ -17,10 +17,10 @@ namespace CobMvc.Core
             //add default service
             _services.AddSingleton<ICobMvc>(this);
             _services.AddSingleton<ICobRequestResolver, DefaultCobRequestResolver>();
-            _services.TryAddSingleton<ICobServiceDescriptorGenerator, CobServiceDescriptorGenerator>();
+            _services.TryAddSingleton<ICobServiceDescriptionGenerator, CobServiceDescriptionGenerator>();
             _services.TryAddSingleton<ICobMvcContextAccessor, CobMvcContextAccessor>();
             _services.AddOptions<CobMvcOptions>();
-
+            //services.AddOptions<CobMvcHttpOptions>();
         }
 
         private IServiceCollection _services = null;

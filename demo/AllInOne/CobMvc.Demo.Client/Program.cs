@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using CobMvc.WebSockets;
+using CobMvc.Core;
 
 namespace CobMvc.Demo.Client
 {
@@ -23,7 +24,9 @@ namespace CobMvc.Demo.Client
             services.AddCobMvc(cob => {
                 cob.AddConsul(opt => {
                     opt.Address = new Uri("http://localhost:8500");
-                }).AddCobWebSockets();
+                }).AddCobWebSockets()
+                .ConfigureOptions(opt => opt.EnableCobMvcParametersBinder = true);
+                cob.Configure<CobMvcRequestOptions>(opt => opt.MaxConnetions = 300);
             });
 
             var configBuilder = new ConfigurationBuilder();
@@ -80,7 +83,9 @@ namespace CobMvc.Demo.Client
             Console.WriteLine("4: SaveUserInfo");
             Console.WriteLine("5: Mark");
             Console.WriteLine("6: Fallback");
+            Console.WriteLine("7: SaveUserInfo2");
 
+            var rnd = new Random(Guid.NewGuid().GetHashCode());
             ConsoleKeyInfo key;
             while ((key = Console.ReadKey()).Key != ConsoleKey.Escape)
             {
@@ -97,20 +102,25 @@ namespace CobMvc.Demo.Client
                         ret = client.GetOtherNames();
                         break;
                     case '3':
-                        ret = await client.GetUserInfo("name" + DateTime.Now.Second);
+                        ret = await client.GetUserInfo("name" + rnd.Next());
                         break;
                     case '4':
-                        await client.SaveUserInfo(new UserInfo { ID = DateTime.Now.Second, Name = "name", Addr = "" }).ContinueWith(t => {
+                        await client.SaveUserInfo(rnd.Next(), new UserInfo { ID = rnd.Next(), Name = "name", Addr = "" }).ContinueWith(t => {
                             Console.WriteLine("after SaveUserInfo...");
                         });
                         ret = null;
                         break;
                     case '5':
-                        client.Mark(DateTime.Now.Second);
+                        client.Mark(rnd.Next());
                         ret = null;
                         break;
                     case '6':
                         ret = client.Fallback();
+                        break;
+                    case '7':
+                        await client.SaveUserInfo2(rnd.Next(), new UserInfo { ID = rnd.Next(), Name = "name", Addr = "" }, new UserInfo { ID = rnd.Next(), Name = "name", Addr = "" }).ContinueWith(t => {
+                            Console.WriteLine("after SaveUserInfo...");
+                        });
                         break;
                 }
 

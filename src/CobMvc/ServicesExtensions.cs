@@ -19,7 +19,9 @@ namespace CobMvc
         /// <param name="services"></param>
         public static void EnsureServerServices(IServiceCollection services)
         {
-            services.AddTransient<CobMvcMiddleware>();
+            services.AddTransient<CobMvcContextMiddleware>();
+            //services.AddTransient<CobMvcParametersBinder>();
+            services.AddTransient<CobMvcParametersBinder>();
 
             services.TryAddSingleton<IServiceRegistration, InMemoryServiceRegistration>();
 
